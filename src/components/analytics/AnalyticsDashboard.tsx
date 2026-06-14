@@ -54,6 +54,11 @@ const FLAG_LABELS = {
   very_high: 'Likely too high',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function tooltipFormatter(val: any): [string, string] {
+  return [`${val} quotes`, '']
+}
+
 export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDashboardProps) {
   const winLossData = [
     { name: 'Accepted', value: analytics.accepted_quotes, color: '#22c55e' },
@@ -61,15 +66,13 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
     { name: 'Pending', value: analytics.pending_quotes, color: '#f59e0b' },
   ]
 
-  // Line items sorted by win rate ascending (problem items first)
   const flaggedItems = lineItemAnalytics
-    .filter((li) => li.times_quoted >= 3) // only flag items with enough data
+    .filter((li) => li.times_quoted >= 3)
     .map((li) => ({ ...li, price_flag: getPricingFlag(li.win_rate) }))
     .sort((a, b) => a.win_rate - b.win_rate)
 
   return (
     <div className="space-y-8">
-      {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <StatCard
           label="Win rate"
@@ -101,7 +104,6 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
         />
       </div>
 
-      {/* Win/Loss chart */}
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-gray-900">Win / loss breakdown</h2>
         <ResponsiveContainer width="100%" height={200}>
@@ -109,7 +111,7 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6b7280' }} />
             <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
-            <Tooltip formatter={(val: number) => [`${val} quotes`, '']} />
+            <Tooltip formatter={tooltipFormatter} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {winLossData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
@@ -119,7 +121,6 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
         </ResponsiveContainer>
       </div>
 
-      {/* Line item pricing heat map */}
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <h2 className="text-base font-semibold text-gray-900">Line item pricing analysis</h2>
@@ -148,11 +149,9 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
                 <span className="col-span-5 font-medium text-gray-800 truncate">{item.description}</span>
                 <span className="col-span-2 text-right text-gray-500">{item.times_quoted}</span>
                 <span className="col-span-2 text-right text-gray-700">{item.win_rate.toFixed(0)}%</span>
-                <span className="col-span-2 text-right text-gray-700">{formatCurrency(item.avg_unit_price)}</span>
+                <span className="col-span-2 text-right text-gray-700">{formatCurrency(item.avg_price)}</span>
                 <span className="col-span-1 flex justify-end">
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${FLAG_COLORS[item.price_flag]}`}
-                  >
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${FLAG_COLORS[item.price_flag]}`}>
                     {FLAG_LABELS[item.price_flag]}
                   </span>
                 </span>

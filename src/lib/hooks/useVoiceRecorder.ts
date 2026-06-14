@@ -18,6 +18,14 @@ export interface UseVoiceRecorderReturn {
   isSupported: boolean
 }
 
+// Augment window for browser Speech Recognition API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition
+    webkitSpeechRecognition: typeof SpeechRecognition
+  }
+}
+
 export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [state, setState] = useState<RecordingState>('idle')
   const [transcript, setTranscript] = useState('')
@@ -26,7 +34,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [error, setError] = useState<string | null>(null)
 
   const recognitionRef = useRef<SpeechRecognition | null>(null)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const accumulatedRef = useRef<number>(0)
 
@@ -49,11 +57,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   }, [])
 
   const createRecognition = useCallback(() => {
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition: typeof window.SpeechRecognition }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition: typeof window.SpeechRecognition }).webkitSpeechRecognition
-
-    const recognition = new SpeechRecognition()
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SpeechRecognitionAPI()
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'en-US'
@@ -70,22 +75,18 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
           interim += result[0].transcript
         }
       }
-      if (final) {
-        setTranscript((prev) => prev + final)
-      }
+      if (final) setTranscript((prev) => prev + final)
       setInterimTranscript(interim)
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error === 'no-speech') return // not an error, just silence
+      if (event.error === 'no-speech') return
       setError(`Voice recognition error: ${event.error}`)
       setState('error')
       clearTimer()
     }
 
-    recognition.onend = () => {
-      setInterimTranscript('')
-    }
+    recognition.onend = () => setInterimTranscript('')
 
     return recognition
   }, [clearTimer])
@@ -101,13 +102,12 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setInterimTranscript('')
       setDuration(0)
       accumulatedRef.current = 0
-
       const recognition = createRecognition()
       recognitionRef.current = recognition
       recognition.start()
       setState('recording')
       startTimer()
-    } catch (err) {
+    } catch {
       setError('Failed to start recording. Please allow microphone access.')
       setState('error')
     }
@@ -135,7 +135,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       recognition.start()
       setState('recording')
       startTimer()
-    } catch (err) {
+    } catch {
       setError('Failed to resume recording.')
       setState('error')
     }
@@ -160,16 +160,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   }, [clearTimer])
 
   return {
-    state,
-    transcript,
-    interimTranscript,
-    duration,
-    error,
-    startRecording,
-    stopRecording,
-    pauseRecording,
-    resumeRecording,
-    resetRecording,
+    state, transcript, interimTranscript, duration, error,
+    startRecording, stopRecording, pauseRecording, resumeRecording, resetRecording,
     isSupported,
   }
 }
