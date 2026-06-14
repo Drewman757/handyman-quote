@@ -18,14 +18,6 @@ export interface UseVoiceRecorderReturn {
   isSupported: boolean
 }
 
-// Augment window for browser Speech Recognition API
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
-  }
-}
-
 export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [state, setState] = useState<RecordingState>('idle')
   const [transcript, setTranscript] = useState('')
@@ -33,7 +25,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const [duration, setDuration] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<number>(0)
   const accumulatedRef = useRef<number>(0)
@@ -57,14 +50,18 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   }, [])
 
   const createRecognition = useCallback(() => {
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition
-    const recognition = new SpeechRecognitionAPI()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const w = window as any
+    const SpeechRecognitionAPI = w.SpeechRecognition || w.webkitSpeechRecognition
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition: any = new SpeechRecognitionAPI()
     recognition.continuous = true
     recognition.interimResults = true
     recognition.lang = 'en-US'
     recognition.maxAlternatives = 1
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
       let final = ''
       let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -79,7 +76,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setInterimTranscript(interim)
     }
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
       if (event.error === 'no-speech') return
       setError(`Voice recognition error: ${event.error}`)
       setState('error')
