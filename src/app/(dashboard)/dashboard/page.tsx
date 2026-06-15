@@ -48,6 +48,14 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          {contractor?.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={contractor.logo_url}
+              alt={contractor.business_name}
+              className="h-10 w-auto object-contain max-w-[140px] mb-2"
+            />
+          )}
           <h1 className="text-2xl font-bold text-gray-900">
             Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
             {contractor?.owner_name?.split(' ')[0] || 'there'}
