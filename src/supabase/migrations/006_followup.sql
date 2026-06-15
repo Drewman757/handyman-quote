@@ -1,0 +1,2 @@
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS follow_up_date DATE;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS follow_up_sent_at TIMESTAMPTZ;

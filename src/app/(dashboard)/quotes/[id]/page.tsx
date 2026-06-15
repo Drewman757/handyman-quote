@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import { ArrowLeft } from 'lucide-react'
 import { QuoteActions } from './QuoteActions'
+import { FollowUp } from './FollowUp'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -121,6 +122,15 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Voice notes</h2>
           <p className="text-sm text-gray-600 italic">{quote.voice_transcript}</p>
         </div>
+      )}
+
+      {/* Follow-up — only for sent quotes */}
+      {quote.status === 'sent' && (
+        <FollowUp
+          quoteId={quote.id}
+          followUpDate={(quote.follow_up_date as string | null) ?? null}
+          followUpSentAt={(quote.follow_up_sent_at as string | null) ?? null}
+        />
       )}
     </div>
   )
