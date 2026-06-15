@@ -78,9 +78,9 @@ export default function LoginPage() {
             Sign up free
           </Link>
         </p>
-        <Link href="/admin" className="text-xs text-gray-400 hover:text-gray-600 mt-4 block text-center">
-          Admin
-        </Link>
+        <p className="text-center mt-3">
+          <Link href="/admin" className="text-xs text-gray-400 hover:text-gray-600">Admin</Link>
+        </p>
       </div>
     </div>
   )
