@@ -39,6 +39,7 @@ export default function SettingsPage() {
       fd.append('logo', file)
       const res = await fetch('/api/logos', { method: 'POST', body: fd })
       const data = await res.json()
+      console.log('[logo upload response]', data)
       if (res.ok && data.logoUrl) {
         setLogoUrl(data.logoUrl)
       } else {

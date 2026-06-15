@@ -69,7 +69,10 @@ export async function POST(req: NextRequest) {
       .eq('id', contractor.id)
       .select('id')   // forces a real round-trip so updateErr is set on mismatch
 
-    if (updateErr) throw updateErr
+    if (updateErr) {
+      console.error('[POST /api/logos] DB update failed', updateErr)
+      return NextResponse.json({ error: updateErr.message }, { status: 500 })
+    }
 
     return NextResponse.json({ logoUrl })
   } catch (err) {
