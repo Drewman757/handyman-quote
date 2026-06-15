@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdmin } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-function getAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('Missing Supabase env vars')
-  return createAdmin(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
-  })
-}
+const adminSupabase = createAdminClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } }
+)
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,29 +27,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Logo must be 2 MB or smaller' }, { status: 400 })
     }
 
-    const admin = getAdmin()
-
-    // Always write to the same path so uploading a new logo overwrites the old one
     const storagePath = `${user.id}/logo`
     const bytes = await file.arrayBuffer()
 
-    const { error: uploadErr } = await admin.storage
+    const { error: uploadErr } = await adminSupabase.storage
       .from('contractor-logos')
       .upload(storagePath, bytes, { contentType: file.type, upsert: true })
 
     if (uploadErr) throw uploadErr
 
-    const { data: { publicUrl } } = admin.storage
+    const { data: { publicUrl } } = adminSupabase.storage
       .from('contractor-logos')
       .getPublicUrl(storagePath)
 
-    // Bust any CDN cache by appending a timestamp query parameter
-    const logoUrl = `${publicUrl}?t=${Date.now()}`
-
-    // Look up the contractor row first so we can update by primary key.
-    // update().eq('user_id') silently matches 0 rows if anything is off —
-    // fetching by id makes the miss explicit and loud.
-    const { data: contractor, error: lookupErr } = await admin
+    const { data: contractor, error: lookupErr } = await adminSupabase
       .from('contractors')
       .select('id')
       .eq('user_id', user.id)
@@ -63,18 +51,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Contractor record not found' }, { status: 404 })
     }
 
-    const { error: updateErr } = await admin
+    const { error: updateErr } = await adminSupabase
       .from('contractors')
-      .update({ logo_url: logoUrl })
+      .update({ logo_url: publicUrl })
       .eq('id', contractor.id)
-      .select('id')   // forces a real round-trip so updateErr is set on mismatch
+      .select('id')
 
     if (updateErr) {
       console.error('[POST /api/logos] DB update failed', updateErr)
       return NextResponse.json({ error: updateErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ logoUrl })
+    return NextResponse.json({ logoUrl: publicUrl })
   } catch (err) {
     console.error('[POST /api/logos]', err)
     const msg = err instanceof Error ? err.message
