@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
+import { TemplateSuggestions } from '@/components/voice/TemplateSuggestions'
+import type { AddLineItemPayload } from '@/components/voice/TemplateSuggestions'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
 import { Plus, Trash2, ChevronRight, ChevronLeft, Camera, X, ImageIcon } from 'lucide-react'
@@ -136,6 +138,22 @@ export default function NewQuotePage() {
     setLineItems(prev => [...prev, {
       id: crypto.randomUUID(), description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
     }])
+  }
+
+  function addLineItemFromSuggestion({ description, pricing_type, unit_price }: AddLineItemPayload) {
+    setLineItems(prev => {
+      // Replace the untouched blank placeholder if it's the only item
+      const onlyBlank = prev.length === 1 && !prev[0].description.trim() && prev[0].unit_price === 0
+      const base = onlyBlank ? [] : prev
+      return [...base, {
+        id: crypto.randomUUID(),
+        description,
+        pricing_type,
+        unit_price,
+        quantity: 1,
+        notes: '',
+      }]
+    })
   }
 
   function updateLineItem(id: string, field: string, value: string | number) {
@@ -318,6 +336,11 @@ export default function NewQuotePage() {
       {step === 1 && (
         <div className="space-y-4">
           <VoiceRecorder onTranscriptChange={onTranscriptChange} />
+
+          <TemplateSuggestions
+            transcript={transcript}
+            onAddLineItem={addLineItemFromSuggestion}
+          />
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <label className="block text-sm font-medium text-gray-700">Job notes</label>
