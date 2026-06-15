@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdmin } from '@supabase/supabase-js'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+function getAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('Missing Supabase env vars')
+  return createAdmin(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  })
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +31,41 @@ export async function POST(req: NextRequest) {
     const client = quote.client as Record<string, string>
     const contractor = quote.contractor as Record<string, string>
     const lineItems = (quote.line_items as Record<string, unknown>[]) || []
+    const photoPaths = (quote.photo_urls as string[] | null) || []
 
+    // ── Build photo attachments + signed URLs for inline display ─────────────
+    interface PhotoResult {
+      filename: string
+      content: Buffer
+      signedUrl: string
+    }
+    const photos: PhotoResult[] = []
+
+    if (photoPaths.length > 0) {
+      const admin = getAdmin()
+      for (let i = 0; i < photoPaths.length; i++) {
+        const path = photoPaths[i]
+        try {
+          const [{ data: fileData }, { data: urlData }] = await Promise.all([
+            admin.storage.from('quote-photos').download(path),
+            admin.storage.from('quote-photos').createSignedUrl(path, 60 * 60 * 24 * 365),
+          ])
+          if (!fileData || !urlData?.signedUrl) continue
+
+          const buf = Buffer.from(await fileData.arrayBuffer())
+          const ext = path.split('.').pop()?.toLowerCase() || 'jpg'
+          photos.push({
+            filename: `job-photo-${i + 1}.${ext}`,
+            content: buf,
+            signedUrl: urlData.signedUrl,
+          })
+        } catch {
+          // Non-fatal — skip this photo if download fails
+        }
+      }
+    }
+
+    // ── Line items HTML ───────────────────────────────────────────────────────
     const lineItemsHtml = lineItems
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
       .map(li => `
@@ -36,6 +80,28 @@ export async function POST(req: NextRequest) {
         </tr>
       `).join('')
 
+    // ── Photo thumbnail grid (signed URLs — viewable in email clients) ────────
+    const photosHtml = photos.length > 0 ? `
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;">
+        <p style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.08em;margin:0 0 12px;text-transform:uppercase;">
+          Job Photos (${photos.length})
+        </p>
+        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+          <tr>
+            ${photos.map(p => `
+              <td style="padding:0 6px 0 0;vertical-align:top;">
+                <img src="${p.signedUrl}"
+                     width="160" height="120"
+                     style="display:block;width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;"
+                     alt="Job photo" />
+              </td>
+            `).join('')}
+          </tr>
+        </table>
+      </div>
+    ` : ''
+
+    // ── Full email HTML ───────────────────────────────────────────────────────
     const html = `
 <!DOCTYPE html>
 <html>
@@ -48,7 +114,7 @@ export async function POST(req: NextRequest) {
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${client.name},</p>
       <p style="color:#6b7280;font-size:14px;line-height:1.6;">Thank you for the opportunity. Please find your project quote below.</p>
-      
+
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
         <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">QUOTE ${quote.quote_number}</div>
         <div style="font-size:13px;color:#374151;">${client.address}, ${client.city}, ${client.state} ${client.zip}</div>
@@ -74,6 +140,8 @@ export async function POST(req: NextRequest) {
       ${quote.payment_terms ? `<p style="font-size:13px;color:#6b7280;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">${quote.payment_terms}</p>` : ''}
       ${quote.caveats ? `<p style="font-size:13px;color:#6b7280;">${quote.caveats}</p>` : ''}
 
+      ${photosHtml}
+
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#9ca3af;">
         <p style="margin:0;">${contractor.business_name}</p>
         <p style="margin:4px 0 0;">${contractor.phone} · ${contractor.email}</p>
@@ -88,6 +156,10 @@ export async function POST(req: NextRequest) {
       to: client.email,
       subject: `Your quote from ${contractor.business_name} — ${formatCurrency(quote.total)}`,
       html,
+      attachments: photos.map(p => ({
+        filename: p.filename,
+        content: p.content,
+      })),
     })
 
     return NextResponse.json({ success: true })

@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
-import { Plus, Trash2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, Trash2, ChevronRight, ChevronLeft, Camera, X, ImageIcon } from 'lucide-react'
 
 interface LineItemDraft {
   id: string
@@ -16,6 +16,11 @@ interface LineItemDraft {
   notes: string
 }
 
+interface PhotoEntry {
+  file: File
+  preview: string
+}
+
 const STEPS = ['Client', 'Job Notes', 'Pricing', 'Review']
 
 export default function NewQuotePage() {
@@ -23,6 +28,7 @@ export default function NewQuotePage() {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Client
   const [clientName, setClientName] = useState('')
@@ -36,6 +42,9 @@ export default function NewQuotePage() {
   // Voice
   const [transcript, setTranscript] = useState('')
   const [notes, setNotes] = useState('')
+
+  // Photos (stored as File + blob preview URL)
+  const [photos, setPhotos] = useState<PhotoEntry[]>([])
 
   // Line items
   const [lineItems, setLineItems] = useState<LineItemDraft[]>([{
@@ -51,6 +60,27 @@ export default function NewQuotePage() {
     setTranscript(t)
     if (t && !notes) setNotes(t)
   }, [notes])
+
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    setPhotos(prev => {
+      const remaining = 5 - prev.length
+      const added = files.slice(0, remaining).map(f => ({
+        file: f,
+        preview: URL.createObjectURL(f),
+      }))
+      return [...prev, ...added]
+    })
+    e.target.value = ''
+  }
+
+  function removePhoto(index: number) {
+    setPhotos(prev => {
+      URL.revokeObjectURL(prev[index].preview)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
 
   function addLineItem() {
     setLineItems(prev => [...prev, {
@@ -79,6 +109,17 @@ export default function NewQuotePage() {
     setSaving(true)
     setError('')
     try {
+      // Upload photos first (if any)
+      let photoUrls: string[] = []
+      if (photos.length > 0) {
+        const fd = new FormData()
+        photos.forEach(p => fd.append('photos', p.file))
+        const photoRes = await fetch('/api/photos', { method: 'POST', body: fd })
+        const photoData = await photoRes.json()
+        if (!photoRes.ok) throw new Error(photoData.error || 'Failed to upload photos')
+        photoUrls = photoData.paths
+      }
+
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,6 +141,7 @@ export default function NewQuotePage() {
           taxRate,
           paymentTerms,
           caveats,
+          photoUrls,
           send: sendNow,
         }),
       })
@@ -203,16 +245,89 @@ export default function NewQuotePage() {
         </div>
       )}
 
-      {/* Step 1: Voice / notes */}
+      {/* Step 1: Voice / notes / photos */}
       {step === 1 && (
         <div className="space-y-4">
           <VoiceRecorder onTranscriptChange={onTranscriptChange} />
+
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <label className="block text-sm font-medium text-gray-700">Job notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none"
               placeholder="Describe the work to be done…" />
           </div>
+
+          {/* Photo upload */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-sm font-medium text-gray-700">Job photos</span>
+                <span className="text-sm text-gray-400 ml-1">(optional, up to 5)</span>
+              </div>
+              {photos.length > 0 && photos.length < 5 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Add more
+                </button>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+
+            {photos.length === 0 ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed border-gray-200 hover:border-orange-300 rounded-xl py-8 flex flex-col items-center gap-2 text-gray-400 hover:text-orange-400 transition group"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-orange-50 flex items-center justify-center transition">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <span className="text-sm font-medium">Add photos from camera or gallery</span>
+                <span className="text-xs">JPEG, PNG, HEIC · max 10 MB each</span>
+              </button>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {photos.map((photo, i) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photo.preview}
+                      alt={`Job photo ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {photos.length < 5 && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="aspect-square rounded-lg border-2 border-dashed border-gray-200 hover:border-orange-300 flex items-center justify-center text-gray-400 hover:text-orange-400 transition"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-3">
             <button onClick={() => setStep(0)} className="flex-1 border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
             <button onClick={() => setStep(2)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
@@ -333,6 +448,27 @@ export default function NewQuotePage() {
             {paymentTerms && (
               <div className="border-t border-gray-100 pt-3">
                 <p className="text-xs text-gray-500">{paymentTerms}</p>
+              </div>
+            )}
+
+            {/* Photo preview in review */}
+            {photos.length > 0 && (
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+                  Job photos · {photos.length}
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {photos.map((photo, i) => (
+                    <div key={i} className="aspect-square rounded-md overflow-hidden bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.preview}
+                        alt={`Job photo ${i + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
