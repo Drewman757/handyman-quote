@@ -33,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .eq('user_id', user.id)
         .single()
       if (data?.is_admin) setIsAdmin(true)
+      console.log('[sidebar] logo_url:', data?.logo_url)
       if (data?.logo_url) setLogoUrl(data.logo_url)
     }
     loadContractor()

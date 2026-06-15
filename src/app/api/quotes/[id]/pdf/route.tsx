@@ -28,7 +28,7 @@ const lineageLogoSrc = readLineageLogo()
 
 const s = StyleSheet.create({
   page: { paddingBottom: 56, fontFamily: 'Helvetica', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
-  header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48, alignItems: 'center' },
+  header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48, flexDirection: 'column', alignItems: 'center' },
   contractorLogo: { width: 160, height: 52, objectFit: 'contain', marginBottom: 10 },
   companyName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#fff', marginBottom: 4, textAlign: 'center' },
   license: { fontSize: 10, color: '#fed7aa', textAlign: 'center' },
