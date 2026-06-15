@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
-import { ArrowLeft, Mail, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { QuoteActions } from './QuoteActions'
 
 const statusColors: Record<string, string> = {
@@ -19,13 +19,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const supabase = await createClient()
   const { data: quote } = await supabase
     .from('quotes')
-    .select('*, client:clients(*), line_items(*)')
+    .select('*, client:clients(*), line_items(*), contractor:contractors(logo_url, business_name, owner_name, phone, email)')
     .eq('id', id)
     .single()
 
   if (!quote) notFound()
 
   const client = quote.client as Record<string, string>
+  const contractor = quote.contractor as { logo_url: string | null; business_name: string } | null
   const lineItems = (quote.line_items as Record<string, unknown>[]) || []
 
   return (
@@ -41,6 +42,19 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
         </div>
         <QuoteActions quoteId={quote.id} status={quote.status} clientEmail={client?.email} />
       </div>
+
+      {/* Contractor branding — shown only when a logo is uploaded */}
+      {contractor?.logo_url && (
+        <div className="bg-orange-50 border border-orange-100 rounded-xl px-5 py-3 flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={contractor.logo_url}
+            alt={contractor.business_name}
+            className="h-10 w-auto object-contain max-w-[160px]"
+          />
+          <span className="text-sm font-medium text-orange-800">{contractor.business_name}</span>
+        </div>
+      )}
 
       {/* Client info */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">

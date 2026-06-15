@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Users } from 'lucide-react'
+import { Users, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ClientsPage() {
@@ -23,18 +23,30 @@ export default async function ClientsPage() {
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {clients.map(c => (
-              <div key={c.id} className="flex items-center justify-between px-5 py-4">
-                <div>
-                  <p className="font-medium text-gray-900">{c.name}</p>
-                  <p className="text-sm text-gray-500">{c.address}, {c.city} · {c.email}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-400">{c.phone}</p>
-                  <Link href={`/quotes/new`} className="text-xs text-orange-600 hover:underline">New quote</Link>
-                </div>
-              </div>
-            ))}
+            {clients.map(c => {
+              const quoteCount = (c.quotes as { count: number }[])?.[0]?.count ?? 0
+              return (
+                <Link
+                  key={c.id}
+                  href={`/clients/${c.id}`}
+                  className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition group"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900 group-hover:text-orange-600 transition">{c.name}</p>
+                    <p className="text-sm text-gray-500">{c.address}, {c.city} · {c.email}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <p className="text-sm text-gray-400">{c.phone}</p>
+                      <p className="text-xs text-gray-400">
+                        {quoteCount === 1 ? '1 quote' : `${quoteCount} quotes`}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition" />
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>

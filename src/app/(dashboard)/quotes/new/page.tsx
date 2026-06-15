@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
@@ -21,6 +22,17 @@ interface PhotoEntry {
   preview: string
 }
 
+interface ExistingClient {
+  id: string
+  name: string
+  address: string
+  city: string
+  state: string
+  zip: string
+  phone: string
+  email: string
+}
+
 const STEPS = ['Client', 'Job Notes', 'Pricing', 'Review']
 
 export default function NewQuotePage() {
@@ -30,6 +42,32 @@ export default function NewQuotePage() {
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Contractor data loaded on mount
+  const [existingClients, setExistingClients] = useState<ExistingClient[]>([])
+  const [contractorLogoUrl, setContractorLogoUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadContractorData() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: contractor } = await supabase
+        .from('contractors')
+        .select('id, logo_url')
+        .eq('user_id', user.id)
+        .single()
+      if (!contractor) return
+      if (contractor.logo_url) setContractorLogoUrl(contractor.logo_url)
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('id, name, address, city, state, zip, phone, email')
+        .eq('contractor_id', contractor.id)
+        .order('name')
+      if (clients) setExistingClients(clients)
+    }
+    loadContractorData()
+  }, [])
+
   // Client
   const [clientName, setClientName] = useState('')
   const [clientAddress, setClientAddress] = useState('')
@@ -38,6 +76,18 @@ export default function NewQuotePage() {
   const [clientZip, setClientZip] = useState('')
   const [clientPhone, setClientPhone] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+
+  function handleExistingClientSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+    const client = existingClients.find(c => c.id === e.target.value)
+    if (!client) return
+    setClientName(client.name)
+    setClientAddress(client.address)
+    setClientCity(client.city)
+    setClientState(client.state)
+    setClientZip(client.zip)
+    setClientPhone(client.phone)
+    setClientEmail(client.email)
+  }
 
   // Voice
   const [transcript, setTranscript] = useState('')
@@ -192,6 +242,25 @@ export default function NewQuotePage() {
       {step === 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Client information</h2>
+
+          {/* Existing client selector */}
+          {existingClients.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select existing client</label>
+              <select
+                defaultValue=""
+                onChange={handleExistingClientSelect}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+              >
+                <option value="">— Enter new client details below —</option>
+                {existingClients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} · {c.city}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">Selecting a client auto-fills the fields. You can edit them before continuing.</p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Full name *</label>
@@ -301,11 +370,7 @@ export default function NewQuotePage() {
                 {photos.map((photo, i) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.preview}
-                      alt={`Job photo ${i + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={photo.preview} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removePhoto(i)}
@@ -357,7 +422,7 @@ export default function NewQuotePage() {
                   placeholder="Description of work" />
                 <div className="grid grid-cols-3 gap-2">
                   <select value={li.pricing_type} onChange={e => updateLineItem(li.id, 'pricing_type', e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400">
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900">
                     <option value="fixed">Flat rate</option>
                     <option value="sqft">Per sq ft</option>
                     <option value="hourly">Per hour</option>
@@ -416,6 +481,18 @@ export default function NewQuotePage() {
       {step === 3 && (
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            {/* Contractor logo preview */}
+            {contractorLogoUrl && (
+              <div className="pb-4 border-b border-gray-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={contractorLogoUrl}
+                  alt="Company logo"
+                  className="h-10 w-auto object-contain max-w-[180px]"
+                />
+              </div>
+            )}
+
             <h2 className="font-semibold text-gray-900">Quote summary</h2>
             <div className="text-sm text-gray-600 space-y-1">
               <p className="font-medium text-gray-900">{clientName}</p>
@@ -451,7 +528,7 @@ export default function NewQuotePage() {
               </div>
             )}
 
-            {/* Photo preview in review */}
+            {/* Photo preview */}
             {photos.length > 0 && (
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
@@ -461,11 +538,7 @@ export default function NewQuotePage() {
                   {photos.map((photo, i) => (
                     <div key={i} className="aspect-square rounded-md overflow-hidden bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.preview}
-                        alt={`Job photo ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={photo.preview} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>

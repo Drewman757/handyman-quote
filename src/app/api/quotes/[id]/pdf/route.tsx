@@ -1,6 +1,8 @@
+import fs from 'fs'
+import path from 'path'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Document, Page, Text, View, StyleSheet, renderToBuffer } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from '@react-pdf/renderer'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 
 export const dynamic = 'force-dynamic'
@@ -12,9 +14,23 @@ const supabaseAdmin = createClient(
   { auth: { persistSession: false } }
 )
 
+// Read the Lineage Labs logo once at cold-start. Falls back gracefully if the
+// file isn't accessible in the Lambda environment.
+function readLineageLogo(): string {
+  try {
+    const buf = fs.readFileSync(path.join(process.cwd(), 'public', 'lineage-labs-logo.jpg'))
+    return `data:image/jpeg;base64,${buf.toString('base64')}`
+  } catch {
+    return ''
+  }
+}
+const lineageLogoSrc = readLineageLogo()
+
 const s = StyleSheet.create({
   page: { paddingBottom: 56, fontFamily: 'Helvetica', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
   header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48 },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  contractorLogo: { height: 50, width: 150, objectFit: 'contain', marginRight: 16 },
   companyName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#fff', marginBottom: 4 },
   license: { fontSize: 10, color: '#fed7aa' },
   body: { paddingHorizontal: 48, paddingTop: 28 },
@@ -47,8 +63,10 @@ const s = StyleSheet.create({
   terms: { marginTop: 28, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
   termsTitle: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
   termsBody: { fontSize: 9, color: '#6b7280', lineHeight: 1.5 },
-  footer: { position: 'absolute', bottom: 20, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 8 },
+  footer: { position: 'absolute', bottom: 20, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 8 },
   footerText: { fontSize: 8, color: '#9ca3af' },
+  footerBrand: { flexDirection: 'row', alignItems: 'center' },
+  lineageLogo: { height: 11, width: 32, objectFit: 'contain', marginRight: 4 },
 })
 
 type LI = { id: string; description: string; pricing_type: string; unit_price: number; quantity: number; total: number; sort_order: number }
@@ -57,22 +75,34 @@ type QuoteDoc = {
   subtotal: number; tax_rate: number; tax_amount: number; total: number
   payment_terms: string | null; caveats: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
-  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null }
+  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null }
   line_items: LI[]
 }
 
-function QuotePDF({ q }: { q: QuoteDoc }) {
+function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: string | null }) {
   const date = new Date(q.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   const items = [...q.line_items].sort((a, b) => a.sort_order - b.sort_order)
 
   return (
     <Document title={`Quote ${q.quote_number}`} author={q.contractor.business_name}>
       <Page size="LETTER" style={s.page}>
+
+        {/* ── Header ── */}
         <View style={s.header}>
-          <Text style={s.companyName}>{q.contractor.business_name}</Text>
-          {q.contractor.license_number ? <Text style={s.license}>License #{q.contractor.license_number}</Text> : null}
+          <View style={s.headerRow}>
+            {contractorLogoSrc ? (
+              <Image src={contractorLogoSrc} style={s.contractorLogo} />
+            ) : null}
+            <View>
+              <Text style={s.companyName}>{q.contractor.business_name}</Text>
+              {q.contractor.license_number ? (
+                <Text style={s.license}>License #{q.contractor.license_number}</Text>
+              ) : null}
+            </View>
+          </View>
         </View>
 
+        {/* ── Body ── */}
         <View style={s.body}>
           <View style={s.metaRow}>
             <View style={s.metaCol}>
@@ -161,10 +191,21 @@ function QuotePDF({ q }: { q: QuoteDoc }) {
           ) : null}
         </View>
 
+        {/* ── Footer (fixed, repeats on every page) ── */}
         <View style={s.footer} fixed>
           <Text style={s.footerText}>{q.contractor.business_name} · {q.contractor.email}</Text>
+
+          {/* Lineage Labs watermark */}
+          <View style={s.footerBrand}>
+            {lineageLogoSrc ? (
+              <Image src={lineageLogoSrc} style={s.lineageLogo} />
+            ) : null}
+            <Text style={s.footerText}>Powered by Lineage Labs, LLC</Text>
+          </View>
+
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
+
       </Page>
     </Document>
   )
@@ -186,8 +227,31 @@ export async function GET(
       return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
     }
 
+    // Download contractor logo as base64 so the PDF renderer doesn't need to
+    // make outbound HTTP requests (more reliable in serverless environments).
+    let contractorLogoSrc: string | null = null
+    const logoUrl = (quote.contractor as Record<string, unknown>).logo_url as string | null
+    if (logoUrl) {
+      try {
+        // Strip query params and extract the storage path
+        const urlObj = new URL(logoUrl)
+        const storagePath = urlObj.pathname.split('/storage/v1/object/public/contractor-logos/')[1]
+        if (storagePath) {
+          const { data: logoData } = await supabaseAdmin.storage
+            .from('contractor-logos')
+            .download(storagePath)
+          if (logoData) {
+            const buf = Buffer.from(await logoData.arrayBuffer())
+            contractorLogoSrc = `data:${logoData.type || 'image/jpeg'};base64,${buf.toString('base64')}`
+          }
+        }
+      } catch {
+        // Non-fatal — PDF renders without the logo if download fails
+      }
+    }
+
     const buf = await renderToBuffer(
-      <QuotePDF q={quote as unknown as QuoteDoc} />
+      <QuotePDF q={quote as unknown as QuoteDoc} contractorLogoSrc={contractorLogoSrc} />
     )
 
     return new NextResponse(new Uint8Array(buf), {
