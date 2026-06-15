@@ -49,11 +49,25 @@ export async function POST(req: NextRequest) {
     // Bust any CDN cache by appending a timestamp query parameter
     const logoUrl = `${publicUrl}?t=${Date.now()}`
 
-    // Persist URL on the contractors row
+    // Look up the contractor row first so we can update by primary key.
+    // update().eq('user_id') silently matches 0 rows if anything is off —
+    // fetching by id makes the miss explicit and loud.
+    const { data: contractor, error: lookupErr } = await admin
+      .from('contractors')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (lookupErr || !contractor) {
+      console.error('[POST /api/logos] contractor lookup failed', lookupErr)
+      return NextResponse.json({ error: 'Contractor record not found' }, { status: 404 })
+    }
+
     const { error: updateErr } = await admin
       .from('contractors')
       .update({ logo_url: logoUrl })
-      .eq('user_id', user.id)
+      .eq('id', contractor.id)
+      .select('id')   // forces a real round-trip so updateErr is set on mismatch
 
     if (updateErr) throw updateErr
 
