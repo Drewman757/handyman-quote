@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { LayoutDashboard, Users, FileText, BarChart2, Settings, Tag, LogOut, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { LayoutDashboard, Users, FileText, BarChart2, Settings, Tag, LogOut, Menu, X, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 const nav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +20,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter()
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    async function checkAdmin() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('contractors')
+        .select('is_admin')
+        .eq('user_id', user.id)
+        .single()
+      if (data?.is_admin) setIsAdmin(true)
+    }
+    checkAdmin()
+  }, [])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -56,7 +71,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-gray-100">
+        <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
+                ${pathname.startsWith('/admin') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              <Shield className="w-4 h-4" />
+              Admin
+            </Link>
+          )}
           <button onClick={handleSignOut}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 w-full transition">
             <LogOut className="w-4 h-4" />
