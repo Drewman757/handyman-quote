@@ -28,9 +28,9 @@ input::placeholder, textarea::placeholder {
 
 /* Kill browser autofill contact/credential emoji buttons on inputs */
 input::-webkit-contacts-auto-fill-button,
-input::-webkit-credentials-auto-fill-button {
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-strong-password-auto-fill-button {
   visibility: hidden !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  right: 0 !important;
+  display: none !important;
+  pointer-events: none;
 }
