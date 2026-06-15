@@ -39,6 +39,32 @@ export function TemplateSuggestions({ transcript, onAddLineItem }: Props) {
   const [newSuggestions, setNewSuggestions] = useState<NewSuggestion[]>([])
   const [addedTemplateIds, setAddedTemplateIds] = useState<Set<string>>(new Set())
   const [addedSuggestionKeys, setAddedSuggestionKeys] = useState<Set<string>>(new Set())
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  async function handleSaveTemplates() {
+    if (saveState !== 'idle') return
+    setSaveState('saving')
+    try {
+      const res = await fetch('/api/pricing-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templates: newSuggestions.map(s => ({
+            name: s.name,
+            category: s.category,
+            pricing_type: s.pricing_type,
+            unit_price: 0,
+          })),
+        }),
+      })
+      if (!res.ok) throw new Error()
+      setSaveState('saved')
+      setTimeout(() => setSaveState('idle'), 3000)
+    } catch {
+      setSaveState('error')
+      setTimeout(() => setSaveState('idle'), 2000)
+    }
+  }
 
   useEffect(() => {
     if (!transcript || transcript.trim().length < 20) {
@@ -216,13 +242,27 @@ export function TemplateSuggestions({ transcript, onAddLineItem }: Props) {
               )
             })}
           </div>
-          <p className="text-xs text-gray-400">
-            <a href="/pricing-templates" target="_blank" rel="noopener noreferrer"
-              className="text-purple-500 hover:underline font-medium">
-              Save as templates →
-            </a>
-            {' '}to reuse across all future quotes
-          </p>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={handleSaveTemplates}
+              disabled={saveState !== 'idle'}
+              className={`font-medium transition ${
+                saveState === 'saved' ? 'text-green-600' :
+                saveState === 'error' ? 'text-red-500' :
+                saveState === 'saving' ? 'text-purple-400 animate-pulse' :
+                'text-purple-500 hover:underline'
+              }`}
+            >
+              {saveState === 'saving' ? 'Saving…' :
+               saveState === 'saved' ? '✓ Saved to templates!' :
+               saveState === 'error' ? 'Save failed — retry?' :
+               'Save as templates →'}
+            </button>
+            {saveState === 'idle' && (
+              <span className="text-gray-400">to reuse across quotes</span>
+            )}
+          </div>
         </div>
       )}
 

@@ -43,6 +43,8 @@ export default function NewQuotePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const priceFocusRef = useRef<HTMLInputElement>(null)
+  const [suggestedItemIds, setSuggestedItemIds] = useState<Set<string>>(new Set())
 
   // Contractor data loaded on mount
   const [existingClients, setExistingClients] = useState<ExistingClient[]>([])
@@ -113,6 +115,15 @@ export default function NewQuotePage() {
     if (t && !notes) setNotes(t)
   }, [notes])
 
+  useEffect(() => {
+    if (step === 2 && priceFocusRef.current) {
+      setTimeout(() => {
+        priceFocusRef.current?.focus()
+        priceFocusRef.current?.select()
+      }, 50)
+    }
+  }, [step])
+
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
@@ -141,12 +152,12 @@ export default function NewQuotePage() {
   }
 
   function addLineItemFromSuggestion({ description, pricing_type, unit_price }: AddLineItemPayload) {
+    const newId = crypto.randomUUID()
     setLineItems(prev => {
-      // Replace the untouched blank placeholder if it's the only item
       const onlyBlank = prev.length === 1 && !prev[0].description.trim() && prev[0].unit_price === 0
       const base = onlyBlank ? [] : prev
       return [...base, {
-        id: crypto.randomUUID(),
+        id: newId,
         description,
         pricing_type,
         unit_price,
@@ -154,6 +165,9 @@ export default function NewQuotePage() {
         notes: '',
       }]
     })
+    if (unit_price === 0) {
+      setSuggestedItemIds(prev => new Set([...prev, newId]))
+    }
   }
 
   function updateLineItem(id: string, field: string, value: string | number) {
@@ -430,8 +444,12 @@ export default function NewQuotePage() {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h2 className="font-semibold text-gray-900">Line items</h2>
-            {lineItems.map((li, idx) => (
-              <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
+            {(() => {
+              const firstSuggestedId = [...suggestedItemIds].find(id =>
+                lineItems.find(li => li.id === id && li.unit_price === 0)
+              ) ?? null
+              return lineItems.map((li, idx) => (
+                <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
                   {lineItems.length > 1 && (
@@ -450,9 +468,24 @@ export default function NewQuotePage() {
                     <option value="sqft">Per sq ft</option>
                     <option value="hourly">Per hour</option>
                   </select>
-                  <input type="number" value={li.unit_price} onChange={e => updateLineItem(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
-                    placeholder="Price" min={0} step={0.01} />
+                  {(() => {
+                    const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
+                    return (
+                      <input
+                        type="number"
+                        ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
+                        value={li.unit_price}
+                        onChange={e => updateLineItem(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                        className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
+                          needsPrice
+                            ? 'border-orange-400 bg-orange-50 focus:ring-orange-500'
+                            : 'border-gray-300 focus:ring-orange-500'
+                        }`}
+                        placeholder={needsPrice ? 'Enter price' : 'Price'}
+                        min={0} step={0.01}
+                      />
+                    )
+                  })()}
                   {li.pricing_type !== 'fixed' && (
                     <input type="number" value={li.quantity} onChange={e => updateLineItem(li.id, 'quantity', parseFloat(e.target.value) || 0)}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
@@ -463,7 +496,8 @@ export default function NewQuotePage() {
                   {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
                 </div>
               </div>
-            ))}
+              ))
+            })()}
             <button onClick={addLineItem}
               className="w-full border-2 border-dashed border-gray-300 hover:border-orange-400 text-gray-500 hover:text-orange-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Add line item
@@ -528,7 +562,7 @@ export default function NewQuotePage() {
                   <span className="text-gray-700">{li.description}
                     {li.pricing_type !== 'fixed' && <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>}
                   </span>
-                  <span className="font-medium">{formatCurrency(li.total)}</span>
+                  <span className="font-medium text-gray-900">{formatCurrency(li.total)}</span>
                 </div>
               ))}
             </div>
