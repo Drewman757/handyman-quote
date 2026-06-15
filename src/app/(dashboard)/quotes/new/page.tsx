@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
@@ -21,7 +20,6 @@ const STEPS = ['Client', 'Job Notes', 'Pricing', 'Review']
 
 export default function NewQuotePage() {
   const router = useRouter()
-  const supabase = createClient()
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -81,90 +79,42 @@ export default function NewQuotePage() {
     setSaving(true)
     setError('')
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      const { data: existingContractor } = await supabase
-        .from('contractors').select('id').eq('user_id', user.id).maybeSingle()
-
-      let contractorId: string
-      if (!existingContractor) {
-        const { data: newContractor, error: createErr } = await supabase
-          .from('contractors').insert({
-            user_id: user.id,
-            business_name: user.email?.split('@')[0] || 'My Business',
-            email: user.email || '',
-            owner_name: '',
-            phone: '',
-          }).select('id').single()
-        if (createErr) throw createErr
-        contractorId = newContractor.id
-      } else {
-        contractorId = existingContractor.id
-      }
-
-      // Upsert client
-      let clientId: string
-      const { data: existingClient } = await supabase.from('clients')
-        .select('id').eq('contractor_id', contractorId).eq('email', clientEmail).maybeSingle()
-
-      if (existingClient) {
-        clientId = existingClient.id
-      } else {
-        const { data: newClient, error: clientErr } = await supabase.from('clients').insert({
-          contractor_id: contractorId,
-          name: clientName, address: clientAddress, city: clientCity,
-          state: clientState, zip: clientZip, phone: clientPhone, email: clientEmail,
-        }).select('id').single()
-        if (clientErr) throw clientErr
-        clientId = newClient.id
-      }
-
-      // Generate quote number
-      const { data: quoteNumData } = await supabase.rpc('generate_quote_number', { p_contractor_id: contractorId })
-
-      // Create quote
-      const { data: quote, error: quoteErr } = await supabase.from('quotes').insert({
-        contractor_id: contractorId,
-        client_id: clientId,
-        quote_number: quoteNumData,
-        status: sendNow ? 'sent' : 'draft',
-        voice_transcript: transcript,
-        notes,
-        subtotal,
-        tax_rate: taxRate / 100,
-        tax_amount: taxAmount,
-        total,
-        payment_terms: paymentTerms,
-        caveats,
-        sent_at: sendNow ? new Date().toISOString() : null,
-      }).select('id').single()
-      if (quoteErr) throw quoteErr
-
-      // Insert line items
-      const { error: liErr } = await supabase.from('line_items').insert(
-        computed.filter(li => li.description).map((li, i) => ({
-          quote_id: quote.id,
-          description: li.description,
-          pricing_type: li.pricing_type,
-          unit_price: li.unit_price,
-          quantity: li.quantity,
-          total: li.total,
-          sort_order: i,
-          notes: li.notes,
-        }))
-      )
-      if (liErr) throw liErr
+      const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client: {
+            name: clientName, address: clientAddress, city: clientCity,
+            state: clientState, zip: clientZip, phone: clientPhone, email: clientEmail,
+          },
+          transcript,
+          notes,
+          lineItems: computed.filter(li => li.description).map(li => ({
+            description: li.description,
+            pricing_type: li.pricing_type,
+            unit_price: li.unit_price,
+            quantity: li.quantity,
+            total: li.total,
+            notes: li.notes,
+          })),
+          taxRate,
+          paymentTerms,
+          caveats,
+          send: sendNow,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to save quote')
 
       if (sendNow && clientEmail) {
         await fetch('/api/email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quoteId: quote.id }),
+          body: JSON.stringify({ quoteId: data.quoteId }),
         })
       }
 
-      router.push(`/quotes/${quote.id}`)
+      router.push(`/quotes/${data.quoteId}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setSaving(false)
@@ -247,7 +197,7 @@ export default function NewQuotePage() {
             </div>
           </div>
           <button onClick={() => setStep(1)} disabled={!clientName || !clientEmail || !clientAddress}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-40 flex items-center justify-center gap-2">
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
             Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
