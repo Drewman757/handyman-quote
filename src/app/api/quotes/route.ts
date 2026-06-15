@@ -4,16 +4,43 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
-// Lazy — avoids module-load crash when env vars are missing at cold start
+// Lazy — avoids module-load crash when env vars are missing at cold start.
+// Also decodes the JWT to assert it really is a service_role key, so a
+// misconfigured Vercel env var (e.g. anon key pasted in the wrong field)
+// produces a clear error instead of a cryptic "permission denied".
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) {
     throw new Error(
-      `Supabase env vars not set — NEXT_PUBLIC_SUPABASE_URL=${!!url}, SUPABASE_SERVICE_ROLE_KEY=${!!key}`
+      `Missing env vars — NEXT_PUBLIC_SUPABASE_URL=${!!url}, SUPABASE_SERVICE_ROLE_KEY=${!!key}. ` +
+      `Add SUPABASE_SERVICE_ROLE_KEY to your Vercel project environment variables ` +
+      `(Supabase dashboard → Project Settings → API → service_role secret).`
     )
   }
-  return createAdmin(url, key, { auth: { persistSession: false } })
+  // Decode the JWT payload (middle segment) to verify role === 'service_role'.
+  // The service_role key bypasses RLS; the anon key does not.
+  try {
+    const payload = JSON.parse(
+      Buffer.from(key.split('.')[1], 'base64').toString('utf8')
+    ) as Record<string, unknown>
+    if (payload.role !== 'service_role') {
+      throw new Error(
+        `SUPABASE_SERVICE_ROLE_KEY contains a "${payload.role}" key, not "service_role". ` +
+        `Go to Supabase → Project Settings → API and copy the service_role secret (not the anon key).`
+      )
+    }
+  } catch (decodeErr) {
+    if (decodeErr instanceof Error && decodeErr.message.includes('service_role')) throw decodeErr
+    // Non-standard key format — proceed and let Supabase validate it
+  }
+  return createAdmin(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  })
 }
 
 // Supabase throws PostgrestError plain objects, not Error instances.
