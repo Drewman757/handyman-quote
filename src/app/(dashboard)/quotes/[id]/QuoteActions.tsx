@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Mail, CheckCircle, XCircle, Send } from 'lucide-react'
+import { CheckCircle, XCircle, Send, FileDown } from 'lucide-react'
 
 export function QuoteActions({ quoteId, status, clientEmail }: {
   quoteId: string
@@ -38,6 +38,14 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
 
   return (
     <div className="flex items-center gap-2">
+      <a
+        href={`/api/quotes/${quoteId}/pdf`}
+        download
+        className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition"
+      >
+        <FileDown className="w-3.5 h-3.5" />
+        PDF
+      </a>
       {(status === 'draft' || status === 'sent') && clientEmail && (
         <button onClick={sendEmail} disabled={loading === 'email'}
           className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50">

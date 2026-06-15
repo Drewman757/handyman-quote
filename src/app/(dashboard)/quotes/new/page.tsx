@@ -82,19 +82,37 @@ export default function NewQuotePage() {
     setError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data: contractor } = await supabase.from('contractors').select('id').eq('user_id', user?.id).single()
-      if (!contractor) throw new Error('Contractor not found')
+      if (!user) throw new Error('Not authenticated')
+
+      const { data: existingContractor } = await supabase
+        .from('contractors').select('id').eq('user_id', user.id).maybeSingle()
+
+      let contractorId: string
+      if (!existingContractor) {
+        const { data: newContractor, error: createErr } = await supabase
+          .from('contractors').insert({
+            user_id: user.id,
+            business_name: user.email?.split('@')[0] || 'My Business',
+            email: user.email || '',
+            owner_name: '',
+            phone: '',
+          }).select('id').single()
+        if (createErr) throw createErr
+        contractorId = newContractor.id
+      } else {
+        contractorId = existingContractor.id
+      }
 
       // Upsert client
       let clientId: string
       const { data: existingClient } = await supabase.from('clients')
-        .select('id').eq('contractor_id', contractor.id).eq('email', clientEmail).maybeSingle()
+        .select('id').eq('contractor_id', contractorId).eq('email', clientEmail).maybeSingle()
 
       if (existingClient) {
         clientId = existingClient.id
       } else {
         const { data: newClient, error: clientErr } = await supabase.from('clients').insert({
-          contractor_id: contractor.id,
+          contractor_id: contractorId,
           name: clientName, address: clientAddress, city: clientCity,
           state: clientState, zip: clientZip, phone: clientPhone, email: clientEmail,
         }).select('id').single()
@@ -103,11 +121,11 @@ export default function NewQuotePage() {
       }
 
       // Generate quote number
-      const { data: quoteNumData } = await supabase.rpc('generate_quote_number', { p_contractor_id: contractor.id })
+      const { data: quoteNumData } = await supabase.rpc('generate_quote_number', { p_contractor_id: contractorId })
 
       // Create quote
       const { data: quote, error: quoteErr } = await supabase.from('quotes').insert({
-        contractor_id: contractor.id,
+        contractor_id: contractorId,
         client_id: clientId,
         quote_number: quoteNumData,
         status: sendNow ? 'sent' : 'draft',
@@ -186,45 +204,45 @@ export default function NewQuotePage() {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Full name *</label>
               <input value={clientName} onChange={e => setClientName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="Jane Smith" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
               <input value={clientAddress} onChange={e => setClientAddress(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="123 Main St" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
               <input value={clientCity} onChange={e => setClientCity(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="Naples" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
                 <input value={clientState} onChange={e => setClientState(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                   placeholder="FL" maxLength={2} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ZIP *</label>
                 <input value={clientZip} onChange={e => setClientZip(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                   placeholder="34102" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
               <input value={clientPhone} onChange={e => setClientPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="(555) 000-0000" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
               <input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 placeholder="jane@example.com" />
             </div>
           </div>
@@ -242,7 +260,7 @@ export default function NewQuotePage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <label className="block text-sm font-medium text-gray-700">Job notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none"
               placeholder="Describe the work to be done…" />
           </div>
           <div className="flex gap-3">
@@ -270,21 +288,21 @@ export default function NewQuotePage() {
                   )}
                 </div>
                 <input value={li.description} onChange={e => updateLineItem(li.id, 'description', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                   placeholder="Description of work" />
                 <div className="grid grid-cols-3 gap-2">
                   <select value={li.pricing_type} onChange={e => updateLineItem(li.id, 'pricing_type', e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400">
                     <option value="fixed">Flat rate</option>
                     <option value="sqft">Per sq ft</option>
                     <option value="hourly">Per hour</option>
                   </select>
                   <input type="number" value={li.unit_price} onChange={e => updateLineItem(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                     placeholder="Price" min={0} step={0.01} />
                   {li.pricing_type !== 'fixed' && (
                     <input type="number" value={li.quantity} onChange={e => updateLineItem(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                       placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
                   )}
                 </div>
@@ -304,18 +322,18 @@ export default function NewQuotePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tax rate (%)</label>
               <input type="number" value={taxRate} onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
                 min={0} max={100} step={0.1} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Payment terms</label>
               <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none" />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Caveats / notes to client</label>
               <textarea value={caveats} onChange={e => setCaveats(e.target.value)} rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none"
                 placeholder="e.g. Price subject to change if additional issues found…" />
             </div>
           </div>
