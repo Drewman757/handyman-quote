@@ -53,7 +53,7 @@ export default async function DashboardPage() {
             <img
               src={contractor.logo_url}
               alt={contractor.business_name}
-              className="h-10 w-auto object-contain max-w-[140px] mb-2"
+              className="max-h-16 w-auto object-contain max-w-[200px] mb-3"
             />
           )}
           <h1 className="text-2xl font-bold text-gray-900">

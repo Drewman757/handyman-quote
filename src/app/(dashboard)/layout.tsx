@@ -21,19 +21,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const supabase = createClient()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    async function checkAdmin() {
+    async function loadContractor() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const { data } = await supabase
         .from('contractors')
-        .select('is_admin')
+        .select('is_admin, logo_url')
         .eq('user_id', user.id)
         .single()
       if (data?.is_admin) setIsAdmin(true)
+      if (data?.logo_url) setLogoUrl(data.logo_url)
     }
-    checkAdmin()
+    loadContractor()
   }, [])
 
   async function handleSignOut() {
@@ -55,6 +57,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <p className="text-xs text-gray-400">Lineage Labs</p>
           </div>
         </div>
+
+        {logoUrl && (
+          <div className="px-4 py-3 border-b border-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoUrl} alt="Company logo" className="max-h-12 w-auto object-contain" />
+          </div>
+        )}
 
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {nav.map(({ href, label, icon: Icon }) => {

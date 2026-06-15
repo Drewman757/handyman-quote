@@ -28,11 +28,10 @@ const lineageLogoSrc = readLineageLogo()
 
 const s = StyleSheet.create({
   page: { paddingBottom: 56, fontFamily: 'Helvetica', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
-  header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48 },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  contractorLogo: { height: 50, width: 150, objectFit: 'contain', marginRight: 16 },
-  companyName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#fff', marginBottom: 4 },
-  license: { fontSize: 10, color: '#fed7aa' },
+  header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48, alignItems: 'center' },
+  contractorLogo: { width: 160, height: 52, objectFit: 'contain', marginBottom: 10 },
+  companyName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#fff', marginBottom: 4, textAlign: 'center' },
+  license: { fontSize: 10, color: '#fed7aa', textAlign: 'center' },
   body: { paddingHorizontal: 48, paddingTop: 28 },
   metaRow: { flexDirection: 'row', marginBottom: 24 },
   metaCol: { flex: 1, paddingRight: 12 },
@@ -89,17 +88,13 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
 
         {/* ── Header ── */}
         <View style={s.header}>
-          <View style={s.headerRow}>
-            {contractorLogoSrc ? (
-              <Image src={contractorLogoSrc} style={s.contractorLogo} />
-            ) : null}
-            <View>
-              <Text style={s.companyName}>{q.contractor.business_name}</Text>
-              {q.contractor.license_number ? (
-                <Text style={s.license}>License #{q.contractor.license_number}</Text>
-              ) : null}
-            </View>
-          </View>
+          {contractorLogoSrc ? (
+            <Image src={contractorLogoSrc} style={s.contractorLogo} />
+          ) : null}
+          <Text style={s.companyName}>{q.contractor.business_name}</Text>
+          {q.contractor.license_number ? (
+            <Text style={s.license}>License #{q.contractor.license_number}</Text>
+          ) : null}
         </View>
 
         {/* ── Body ── */}
