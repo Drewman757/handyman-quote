@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Orange rounded-square background (iOS-style app icon shape) -->
+  <rect width="512" height="512" rx="115" fill="#f97316"/>
+  <!-- White hammer: head + handle, rotated -35° around center -->
+  <g fill="white" transform="rotate(-35 256 256)">
+    <!-- Hammer head (wide horizontal bar) -->
+    <rect x="136" y="116" width="240" height="106" rx="26"/>
+    <!-- Hammer handle (narrower, extends down from center of head) -->
+    <rect x="229" y="218" width="54" height="192" rx="22"/>
+  </g>
+</svg>
