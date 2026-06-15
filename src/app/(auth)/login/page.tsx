@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   async function handleLogin(e: React.FormEvent) {
@@ -22,7 +23,8 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      const redirect = searchParams.get('redirect')
+      router.push(redirect ?? '/dashboard')
     }
   }
 
@@ -77,9 +79,6 @@ export default function LoginPage() {
           <Link href="/register" className="text-orange-600 font-medium hover:underline">
             Sign up free
           </Link>
-        </p>
-        <p className="text-center mt-3">
-          <Link href="/admin" className="text-xs text-gray-400 hover:text-gray-600">Admin</Link>
         </p>
       </div>
     </div>
