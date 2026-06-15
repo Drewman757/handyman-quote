@@ -24,7 +24,7 @@ export async function POST(
 
     const { data: contractor } = await adminSupabase
       .from('contractors')
-      .select('id, business_name, owner_name, phone, email')
+      .select('id, business_name, owner_name, phone, email, logo_url')
       .eq('user_id', user.id)
       .single()
     if (!contractor) return NextResponse.json({ error: 'Contractor not found' }, { status: 404 })
@@ -38,12 +38,14 @@ export async function POST(
     if (!quote) return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
 
     const client = quote.client as Record<string, string>
+    const logoUrl = (contractor as Record<string, unknown>).logo_url as string | null
 
     const html = `
 <!DOCTYPE html>
 <html>
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+    ${logoUrl ? `<div style="text-align:center;padding:16px 0 8px;"><img src="${logoUrl}" style="max-height:64px;max-width:200px;object-fit:contain;" /></div>` : ''}
     <div style="background:#f97316;padding:24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">${contractor.business_name}</h1>
       <p style="color:#fed7aa;margin:4px 0 0;font-size:14px;">Quote Follow-Up</p>
