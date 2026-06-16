@@ -71,6 +71,7 @@ export async function POST(
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+      replyTo: contractor.email,
       to: client.email,
       subject: `Following up on your quote from ${contractor.business_name}`,
       html,

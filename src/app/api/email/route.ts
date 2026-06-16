@@ -154,6 +154,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+      replyTo: contractor.email,
       to: client.email,
       subject: `Your quote from ${contractor.business_name} — ${formatCurrency(quote.total)}`,
       html,
