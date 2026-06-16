@@ -125,18 +125,21 @@ export async function POST(req: NextRequest) {
         ${lineItemsHtml}
       </table>
 
-      <div style="border-top:2px solid #111827;margin-top:16px;padding-top:16px;">
+      <table style="width:100%;border-collapse:collapse;border-top:2px solid #111827;margin-top:16px;">
         ${quote.tax_rate > 0 ? `
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b7280;margin-bottom:6px;">
-          <span>Subtotal</span><span>${formatCurrency(quote.subtotal)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:#6b7280;margin-bottom:6px;">
-          <span>Tax (${(quote.tax_rate * 100).toFixed(1)}%)</span><span>${formatCurrency(quote.tax_amount)}</span>
-        </div>` : ''}
-        <div style="display:flex;justify-content:space-between;font-size:18px;font-weight:700;color:#111827;">
-          <span>Total</span><span>${formatCurrency(quote.total)}</span>
-        </div>
-      </div>
+        <tr>
+          <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;">Subtotal</td>
+          <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.subtotal)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;font-size:14px;color:#6b7280;">Tax (${(quote.tax_rate * 100).toFixed(1)}%)</td>
+          <td style="padding:4px 0;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.tax_amount)}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="padding:${quote.tax_rate > 0 ? '8px' : '12px'} 0 4px;font-size:18px;font-weight:700;color:#111827;">Total</td>
+          <td style="padding:${quote.tax_rate > 0 ? '8px' : '12px'} 0 4px;font-size:18px;font-weight:700;color:#111827;text-align:right;">${formatCurrency(quote.total)}</td>
+        </tr>
+      </table>
 
       ${quote.payment_terms ? `<p style="font-size:13px;color:#6b7280;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">${quote.payment_terms}</p>` : ''}
       ${quote.caveats ? `<p style="font-size:13px;color:#6b7280;">${quote.caveats}</p>` : ''}
