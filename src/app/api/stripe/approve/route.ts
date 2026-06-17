@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: `${siteUrl}/dashboard` },
+      options: { redirectTo: `${siteUrl}/auth/confirm?next=/dashboard` },
     })
 
     const loginLink =
