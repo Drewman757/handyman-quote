@@ -64,10 +64,12 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Failed to create user: ' + createErr.message, { status: 500 })
     }
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
+
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: 'https://handyman-quote.vercel.app/dashboard' },
+      options: { redirectTo: `${siteUrl}/dashboard` },
     })
 
     const loginLink =
