@@ -26,6 +26,11 @@ input::placeholder, textarea::placeholder {
   color: #9ca3af !important;
 }
 
+/* Remove browser autofill yellow/blue background tint */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+}
+
 /* Kill browser autofill contact/credential emoji buttons on inputs */
 input::-webkit-contacts-auto-fill-button,
 input::-webkit-credentials-auto-fill-button,
