@@ -65,6 +65,11 @@ function LoginForm() {
                 required
               />
             </div>
+            <div className="flex justify-end">
+              <Link href="/forgot-password" className="text-xs text-orange-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
@@ -75,13 +80,6 @@ function LoginForm() {
             </button>
           </form>
         </div>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Don&apos;t have an account?{' '}
-          <Link href="/request-access" className="text-orange-600 font-medium hover:underline">
-            Sign up free
-          </Link>
-        </p>
       </div>
     </div>
   )
