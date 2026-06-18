@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const { error: createErr } = await admin.auth.admin.createUser({
+    const { data: userData, error: createErr } = await admin.auth.admin.createUser({
       email,
       password: signup.password,
       email_confirm: true,
@@ -63,6 +63,19 @@ export async function GET(req: NextRequest) {
     if (createErr && !createErr.message.toLowerCase().includes('already been registered')) {
       console.error('[approve] createUser error', createErr)
       return new NextResponse('Failed to create user: ' + createErr.message, { status: 500 })
+    }
+
+    if (userData?.user) {
+      const { error: contractorErr } = await admin.from('contractors').insert({
+        user_id: userData.user.id,
+        business_name: signup.company,
+        owner_name: signup.name,
+        phone: signup.phone,
+        email,
+      })
+      if (contractorErr) {
+        console.error('[approve] insert contractor failed', contractorErr)
+      }
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
