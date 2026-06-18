@@ -80,6 +80,13 @@ const s = StyleSheet.create({
   lineageLogo: { height: 11, width: 32, objectFit: 'contain', marginRight: 4 },
 })
 
+function sanitizeText(text: string): string {
+  return text
+    .replace(/\//g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 type LI = { id: string; description: string; pricing_type: string; unit_price: number; quantity: number; total: number; sort_order: number; item_type: string }
 type QuoteDoc = {
   quote_number: string; created_at: string
@@ -164,14 +171,14 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
             if (li.item_type === 'section') {
               return (
                 <View key={li.id} style={s.sectionRow}>
-                  <Text style={s.sectionLabel}>{li.description}</Text>
+                  <Text style={s.sectionLabel}>{sanitizeText(li.description)}</Text>
                 </View>
               )
             }
             return (
               <View key={li.id} style={s.row}>
                 <View style={s.tdDesc}>
-                  <Text style={s.tdDescMain}>{li.description}</Text>
+                  <Text style={s.tdDescMain}>{sanitizeText(li.description)}</Text>
                   {!q.lump_sum && li.pricing_type !== 'fixed' ? (
                     <Text style={s.tdDescSub}>
                       {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}

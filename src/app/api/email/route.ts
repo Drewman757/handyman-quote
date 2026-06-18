@@ -66,6 +66,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Line items HTML ───────────────────────────────────────────────────────
+    function sanitizeText(text: string): string {
+      return text.replace(/\//g, ' ').replace(/\s{2,}/g, ' ').trim()
+    }
+
     const isLumpSum = !!(quote as Record<string, unknown>).lump_sum
     const lineItemsHtml = lineItems
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
           return `
             <tr>
               <td colspan="2" style="padding:10px 8px 6px;background:#f3f4f6;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;">
-                ${li.description}
+                ${sanitizeText(li.description as string)}
               </td>
             </tr>
           `
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
           return `
             <tr>
               <td colspan="2" style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                <div style="font-size:14px;color:#111827;">${li.description}</div>
+                <div style="font-size:14px;color:#111827;">${sanitizeText(li.description as string)}</div>
               </td>
             </tr>
           `
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
         return `
           <tr>
             <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-              <div style="font-size:14px;color:#111827;">${li.description}</div>
+              <div style="font-size:14px;color:#111827;">${sanitizeText(li.description as string)}</div>
               ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#9ca3af;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
             </td>
             <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827;">
