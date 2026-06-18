@@ -74,7 +74,7 @@ type QuoteDoc = {
   subtotal: number; tax_rate: number; tax_amount: number; total: number
   payment_terms: string | null; caveats: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
-  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null }
+  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null; address: string | null; website: string | null; insurance_number: string | null }
   line_items: LI[]
 }
 
@@ -92,8 +92,18 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
             <Image src={contractorLogoSrc} style={s.contractorLogo} />
           ) : null}
           <Text style={s.companyName}>{q.contractor.business_name}</Text>
+          {q.contractor.address ? (
+            <Text style={s.license}>{q.contractor.address}</Text>
+          ) : null}
+          <Text style={s.license}>{q.contractor.phone} · {q.contractor.email}</Text>
+          {q.contractor.website ? (
+            <Text style={s.license}>{q.contractor.website}</Text>
+          ) : null}
           {q.contractor.license_number ? (
             <Text style={s.license}>License #{q.contractor.license_number}</Text>
+          ) : null}
+          {q.contractor.insurance_number ? (
+            <Text style={s.license}>Insurance #{q.contractor.insurance_number}</Text>
           ) : null}
         </View>
 
@@ -117,8 +127,10 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
               <Text style={s.metaLabel}>FROM</Text>
               <Text style={s.metaName}>{q.contractor.business_name}</Text>
               {q.contractor.owner_name ? <Text style={s.metaText}>{q.contractor.owner_name}</Text> : null}
+              {q.contractor.address ? <Text style={s.metaText}>{q.contractor.address}</Text> : null}
               <Text style={s.metaText}>{q.contractor.phone}</Text>
               <Text style={s.metaText}>{q.contractor.email}</Text>
+              {q.contractor.website ? <Text style={s.metaText}>{q.contractor.website}</Text> : null}
             </View>
           </View>
 
