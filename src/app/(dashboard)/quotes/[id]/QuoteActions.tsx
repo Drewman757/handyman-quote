@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Send, FileDown } from 'lucide-react'
+import { CheckCircle, XCircle, Send, FileDown, Pencil, Copy } from 'lucide-react'
 
 export function QuoteActions({ quoteId, status, clientEmail }: {
   quoteId: string
@@ -36,8 +36,33 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
     setLoading('')
   }
 
+  async function duplicate() {
+    setLoading('duplicate')
+    const res = await fetch(`/api/quotes/${quoteId}/duplicate`, { method: 'POST' })
+    const data = await res.json()
+    if (res.ok && data.quoteId) {
+      router.push(`/quotes/${data.quoteId}`)
+    }
+    setLoading('')
+  }
+
   return (
     <div className="flex items-center gap-2">
+      <a
+        href={`/quotes/${quoteId}/edit`}
+        className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+        Edit
+      </a>
+      <button
+        onClick={duplicate}
+        disabled={loading === 'duplicate'}
+        className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50"
+      >
+        <Copy className="w-3.5 h-3.5" />
+        {loading === 'duplicate' ? 'Copying…' : 'Duplicate'}
+      </button>
       <a
         href={`/api/quotes/${quoteId}/pdf`}
         download
