@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     const { data: linkData } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,
-      options: { redirectTo: `${siteUrl}/auth/confirm?next=/update-password` },
+      options: { redirectTo: `${siteUrl}/update-password` },
     })
 
     const loginLink =
