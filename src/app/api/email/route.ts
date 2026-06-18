@@ -66,7 +66,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Line items HTML ───────────────────────────────────────────────────────
-    const lineItemsHtml = lineItems
+    const isLumpSum = !!(quote as Record<string, unknown>).lump_sum
+    const lineItemsHtml = isLumpSum ? '' : lineItems
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
       .map(li => `
         <tr>
@@ -121,12 +122,10 @@ export async function POST(req: NextRequest) {
         <div style="font-size:13px;color:#374151;">${client.address}, ${client.city}, ${client.state} ${client.zip}</div>
       </div>
 
-      <table style="width:100%;border-collapse:collapse;">
-        ${lineItemsHtml}
-      </table>
+      ${isLumpSum ? '' : `<table style="width:100%;border-collapse:collapse;">${lineItemsHtml}</table>`}
 
       <table style="width:100%;border-collapse:collapse;border-top:2px solid #111827;margin-top:16px;">
-        ${quote.tax_rate > 0 ? `
+        ${!isLumpSum && quote.tax_rate > 0 ? `
         <tr>
           <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;">Subtotal</td>
           <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.subtotal)}</td>
@@ -136,8 +135,8 @@ export async function POST(req: NextRequest) {
           <td style="padding:4px 0;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.tax_amount)}</td>
         </tr>` : ''}
         <tr>
-          <td style="padding:${quote.tax_rate > 0 ? '8px' : '12px'} 0 4px;font-size:18px;font-weight:700;color:#111827;">Total</td>
-          <td style="padding:${quote.tax_rate > 0 ? '8px' : '12px'} 0 4px;font-size:18px;font-weight:700;color:#111827;text-align:right;">${formatCurrency(quote.total)}</td>
+          <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;">Total</td>
+          <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;text-align:right;">${formatCurrency(quote.total)}</td>
         </tr>
       </table>
 

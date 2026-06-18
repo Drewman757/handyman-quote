@@ -74,6 +74,7 @@ type QuoteDoc = {
   subtotal: number; tax_rate: number; tax_amount: number; total: number
   payment_terms: string | null; caveats: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
+  lump_sum: boolean
   contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null; address: string | null; website: string | null; insurance_number: string | null }
   line_items: LI[]
 }
@@ -136,32 +137,36 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
 
           <View style={s.divider} />
 
-          <View style={s.tableHeader}>
-            <Text style={s.thDesc}>DESCRIPTION</Text>
-            <Text style={s.thQty}>QTY</Text>
-            <Text style={s.thUnit}>UNIT PRICE</Text>
-            <Text style={s.thTotal}>AMOUNT</Text>
-          </View>
-
-          {items.map((li) => (
-            <View key={li.id} style={s.row}>
-              <View style={s.tdDesc}>
-                <Text style={s.tdDescMain}>{li.description}</Text>
-                {li.pricing_type !== 'fixed' ? (
-                  <Text style={s.tdDescSub}>
-                    {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
-                  </Text>
-                ) : null}
+          {q.lump_sum ? null : (
+            <>
+              <View style={s.tableHeader}>
+                <Text style={s.thDesc}>DESCRIPTION</Text>
+                <Text style={s.thQty}>QTY</Text>
+                <Text style={s.thUnit}>UNIT PRICE</Text>
+                <Text style={s.thTotal}>AMOUNT</Text>
               </View>
-              <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
-              <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
-              <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
-            </View>
-          ))}
+
+              {items.map((li) => (
+                <View key={li.id} style={s.row}>
+                  <View style={s.tdDesc}>
+                    <Text style={s.tdDescMain}>{li.description}</Text>
+                    {li.pricing_type !== 'fixed' ? (
+                      <Text style={s.tdDescSub}>
+                        {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
+                  <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
+                  <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
+                </View>
+              ))}
+            </>
+          )}
 
           <View style={s.totalsWrap}>
             <View style={s.totalsBox}>
-              {q.tax_rate > 0 ? (
+              {!q.lump_sum && q.tax_rate > 0 ? (
                 <>
                   <View style={s.trow}>
                     <Text style={s.tlabel}>Subtotal</Text>

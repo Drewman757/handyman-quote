@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     step = 'parse'
     const body = await req.json()
-    const { client, transcript, notes, lineItems, taxRate, paymentTerms, caveats, send, photoUrls } = body
+    const { client, transcript, notes, lineItems, taxRate, paymentTerms, caveats, lumpSum, send, photoUrls } = body
 
     // ── 2. Admin client (bypasses RLS) ─────────────────────────────────────
     step = 'admin-init'
@@ -172,6 +172,7 @@ export async function POST(req: NextRequest) {
         total,
         payment_terms: paymentTerms || null,
         caveats: caveats || null,
+        lump_sum: lumpSum === true,
         photo_urls: Array.isArray(photoUrls) ? photoUrls : [],
         sent_at: send ? new Date().toISOString() : null,
       })

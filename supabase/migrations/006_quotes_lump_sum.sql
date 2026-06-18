@@ -1,0 +1,1 @@
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS lump_sum boolean NOT NULL DEFAULT false;

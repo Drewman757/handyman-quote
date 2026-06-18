@@ -109,6 +109,7 @@ export default function NewQuotePage() {
   const [taxRate, setTaxRate] = useState(0)
   const [paymentTerms, setPaymentTerms] = useState('Payment due upon completion.')
   const [caveats, setCaveats] = useState('')
+  const [lumpSum, setLumpSum] = useState(false)
 
   const onTranscriptChange = useCallback((t: string) => {
     setTranscript(t)
@@ -223,6 +224,7 @@ export default function NewQuotePage() {
           taxRate,
           paymentTerms,
           caveats,
+          lumpSum,
           photoUrls,
           send: sendNow,
         }),
@@ -523,6 +525,19 @@ export default function NewQuotePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none"
                 placeholder="e.g. Price subject to change if additional issues found…" />
             </div>
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Lump sum quote</p>
+                <p className="text-xs text-gray-400 mt-0.5">Client sees total only — line items stay private</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLumpSum(prev => !prev)}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${lumpSum ? 'bg-orange-500' : 'bg-gray-200'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${lumpSum ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-3">
@@ -557,7 +572,9 @@ export default function NewQuotePage() {
               <p>{clientPhone} · {clientEmail}</p>
             </div>
             <div className="border-t border-gray-100 pt-4 space-y-2">
-              {computed.filter(li => li.description).map(li => (
+              {lumpSum ? (
+                <p className="text-xs text-gray-400 italic">Lump sum — client sees total only</p>
+              ) : computed.filter(li => li.description).map(li => (
                 <div key={li.id} className="flex justify-between text-sm">
                   <span className="text-gray-700">{li.description}
                     {li.pricing_type !== 'fixed' && <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>}
