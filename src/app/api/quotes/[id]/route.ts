@@ -33,7 +33,7 @@ export async function PUT(
       .single()
 
     if (!existing) return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
-    const contractorRow = existing.contractor as Record<string, string>
+    const contractorRow = (Array.isArray(existing.contractor) ? existing.contractor[0] : existing.contractor) as Record<string, string>
     if (contractorRow.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()

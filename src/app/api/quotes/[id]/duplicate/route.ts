@@ -33,7 +33,7 @@ export async function POST(
       .single()
 
     if (!quote) return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
-    const contractorRow = quote.contractor as Record<string, string>
+    const contractorRow = (Array.isArray(quote.contractor) ? quote.contractor[0] : quote.contractor) as Record<string, string>
     if (contractorRow.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // New quote number
