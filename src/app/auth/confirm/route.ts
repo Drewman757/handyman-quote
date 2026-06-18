@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
+  const { searchParams, origin } = new URL(req.url)
+  const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as 'magiclink' | 'email' | 'recovery' | null
+  const type = searchParams.get('type')
   const next = searchParams.get('next') ?? '/dashboard'
 
-  if (token_hash && type) {
+  // Handle PKCE code exchange
+  if (code) {
+    const { createServerClient } = await import('@supabase/ssr')
+    const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,13 +26,39 @@ export async function GET(req: NextRequest) {
         },
       }
     )
-
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const redirectPath = type === 'recovery' ? '/update-password' : next
-      return NextResponse.redirect(new URL(redirectPath, req.url))
+      return NextResponse.redirect(new URL(next, origin))
     }
   }
 
-  return NextResponse.redirect(new URL('/login?error=invalid_link', req.url))
+  // Handle token_hash flow
+  if (token_hash && type) {
+    const { createServerClient } = await import('@supabase/ssr')
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+    const { error } = await supabase.auth.verifyOtp({
+      type: type as any,
+      token_hash,
+    })
+    if (!error) {
+      return NextResponse.redirect(new URL(next, origin))
+    }
+  }
+
+  return NextResponse.redirect(new URL('/login?error=invalid_link', origin))
 }
