@@ -55,7 +55,7 @@ export default function RequestAccessPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icon.svg" alt="QuoteBuilder" className="w-14 h-14 mb-4 mx-auto" />
+          <img src="/icon-192.png" alt="QuoteBuilder" className="w-14 h-14 mb-4 mx-auto" />
           <h1 className="text-2xl font-bold text-gray-900">Get QuoteBuilder</h1>
           <p className="text-sm text-gray-500 mt-1">$50/month — cancel anytime</p>
         </div>
