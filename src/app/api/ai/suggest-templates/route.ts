@@ -20,62 +20,58 @@ interface TemplateSummary {
   category: string
   pricing_type: string
   unit_price: number
-  description: string | null
+}
+
+interface ClaudeItem {
+  description: string
+  category: string
+  pricing_type: string
+  templateId: string | null
+  unit_price: number
+}
+
+interface ClaudeSection {
+  title: string
+  items: ClaudeItem[]
 }
 
 interface ClaudeResult {
-  matchedIds: string[]
-  newSuggestions: { name: string; category: string; pricing_type: string }[]
+  sections: ClaudeSection[]
 }
 
 function buildPrompt(transcript: string, templates: TemplateSummary[]): string {
-  if (templates.length === 0) {
-    return `You are helping a handyman app analyze a voice transcript to suggest pricing templates to create.
+  const templateBlock = templates.length > 0
+    ? `\nExisting pricing templates — match items to these where appropriate:
+${JSON.stringify(templates.map(t => ({ id: t.id, name: t.name, category: t.category, pricing_type: t.pricing_type, unit_price: t.unit_price })), null, 2)}\n`
+    : ''
+
+  return `You are a pricing assistant for a handyman contractor app. Parse a voice transcript recorded on a job walk and extract all the work that needs to be done, organized by room or area.
 
 Voice transcript:
 "${transcript.trim()}"
+${templateBlock}
+Instructions:
+1. Read the ENTIRE transcript — do not stop after the first room.
+2. Detect distinct rooms or work areas. Watch for transition phrases like: "next room", "moving on to", "in the [room]", "[room name] needs", "over in the", "for the [room]", specific room names (kitchen, bathroom, bedroom, living room, garage, etc.), flood/water damage zones, etc.
+3. Group every service or task under the room/area where it will be performed.
+4. If no room transitions are detected, group everything under a contextually appropriate single section title (e.g. "Kitchen Renovation", "Water Damage Repair").
+5. Keep item descriptions concise and specific (3–7 words, action-oriented).
+${templates.length > 0 ? `6. For each item, check if it closely matches an existing template by service type. If matched, include the template's "id" as "templateId" and its "unit_price". If no match, set templateId to null and unit_price to 0.` : `6. Set templateId to null and unit_price to 0 for all items.`}
 
-Identify the distinct services, tasks, and work types mentioned. Suggest up to 4 new pricing templates to create.
-
-Respond with ONLY valid JSON (no markdown, no extra text):
-{
-  "matchedIds": [],
-  "newSuggestions": [
-    {"name": "Service Name", "category": "Category", "pricing_type": "fixed"}
-  ]
-}
-
-Rules:
-- "pricing_type" must be one of: "fixed", "sqft", "hourly"
-- Use "hourly" for labor/time-based work, "sqft" for area-based work, "fixed" for everything else
-- Keep names concise (2–4 words)`
-  }
-
-  return `You are helping a handyman app match a voice transcript to pricing templates.
-
-Voice transcript:
-"${transcript.trim()}"
-
-Existing pricing templates:
-${JSON.stringify(templates, null, 2)}
-
-Task:
-1. Find up to 3 templates whose service type best matches work described in the transcript.
-2. For any work mentioned that has no good template match, suggest new templates to create (max 3).
+pricing_type must be exactly: "fixed" | "sqft" | "hourly"
+Category examples: "Demo & Removal", "Drywall", "Painting", "Carpentry", "Flooring", "Tile", "Plumbing", "Electrical", "Labor", "Trim & Finish"
 
 Respond with ONLY valid JSON (no markdown, no extra text):
 {
-  "matchedIds": ["id1", "id2"],
-  "newSuggestions": [
-    {"name": "Service Name", "category": "Category", "pricing_type": "fixed"}
+  "sections": [
+    {
+      "title": "Room or Area Name",
+      "items": [
+        { "description": "Task description", "category": "Category", "pricing_type": "fixed", "templateId": null, "unit_price": 0 }
+      ]
+    }
   ]
-}
-
-Rules:
-- Only include a template ID if it genuinely relates to the work described — no guesses
-- "pricing_type" must be one of: "fixed", "sqft", "hourly"
-- If all work is covered by matched templates, newSuggestions can be []
-- Keep new suggestion names concise (2–4 words)`
+}`
 }
 
 export async function POST(req: NextRequest) {
@@ -86,13 +82,13 @@ export async function POST(req: NextRequest) {
 
     const { transcript } = await req.json() as { transcript: string }
     if (!transcript || transcript.trim().length < 15) {
-      return NextResponse.json({ matches: [], newSuggestions: [] })
+      return NextResponse.json({ sections: [] })
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
       console.error('[suggest-templates] ANTHROPIC_API_KEY not set')
-      return NextResponse.json({ matches: [], newSuggestions: [] })
+      return NextResponse.json({ sections: [] })
     }
 
     const admin = getAdmin()
@@ -105,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     const { data: rawTemplates } = await admin
       .from('pricing_templates')
-      .select('id, name, category, pricing_type, unit_price, description')
+      .select('id, name, category, pricing_type, unit_price')
       .eq('contractor_id', contractor?.id ?? '')
       .order('name')
 
@@ -114,30 +110,33 @@ export async function POST(req: NextRequest) {
     const anthropic = new Anthropic({ apiKey })
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [{ role: 'user', content: buildPrompt(transcript, templates) }],
     })
 
     const rawText = message.content[0].type === 'text' ? message.content[0].text : '{}'
-    // Strip potential markdown code fences
     const jsonText = rawText.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim()
     const result = JSON.parse(jsonText) as ClaudeResult
 
-    // Resolve matched IDs to full template objects in the order Claude ranked them
-    const matches = (result.matchedIds ?? [])
-      .slice(0, 3)
-      .flatMap(id => {
-        const t = templates.find(t => t.id === id)
-        return t ? [t] : []
-      })
+    // Validate and normalize sections
+    const sections: ClaudeSection[] = (result.sections ?? [])
+      .filter(s => s.title && Array.isArray(s.items) && s.items.length > 0)
+      .map(s => ({
+        title: s.title,
+        items: s.items
+          .filter(item => item.description)
+          .map(item => ({
+            description: item.description,
+            category: item.category || 'General',
+            pricing_type: ['fixed', 'sqft', 'hourly'].includes(item.pricing_type) ? item.pricing_type : 'fixed',
+            templateId: item.templateId ?? null,
+            unit_price: typeof item.unit_price === 'number' ? item.unit_price : 0,
+          })),
+      }))
 
-    return NextResponse.json({
-      matches,
-      newSuggestions: (result.newSuggestions ?? []).slice(0, 3),
-    })
+    return NextResponse.json({ sections })
   } catch (err) {
-    // Non-fatal — suggestions are optional; silently return empty so the quote flow continues
     console.error('[POST /api/ai/suggest-templates]', err)
-    return NextResponse.json({ matches: [], newSuggestions: [] })
+    return NextResponse.json({ sections: [] })
   }
 }

@@ -177,6 +177,27 @@ export default function NewQuotePage() {
     }
   }
 
+  function addSectionFromSuggestion(title: string, items: AddLineItemPayload[]) {
+    const itemRows = items.map(item => ({
+      id: crypto.randomUUID(),
+      type: 'item' as const,
+      description: item.description,
+      pricing_type: item.pricing_type,
+      unit_price: item.unit_price,
+      quantity: 1,
+      notes: '',
+    }))
+    setRows(prev => {
+      const onlyBlank = prev.length === 1 && prev[0].type === 'item' && !(prev[0] as ItemDraft).description.trim() && (prev[0] as ItemDraft).unit_price === 0
+      const base = onlyBlank ? [] : prev
+      return [...base, { id: crypto.randomUUID(), type: 'section' as const, title }, ...itemRows]
+    })
+    const priceTbdIds = new Set(itemRows.filter(r => r.unit_price === 0).map(r => r.id))
+    if (priceTbdIds.size > 0) {
+      setSuggestedItemIds(prev => new Set([...prev, ...priceTbdIds]))
+    }
+  }
+
   function updateRow(id: string, field: string, value: string | number) {
     setRows(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row))
   }
@@ -375,6 +396,7 @@ export default function NewQuotePage() {
           <TemplateSuggestions
             transcript={transcript}
             onAddLineItem={addLineItemFromSuggestion}
+            onAddSection={addSectionFromSuggestion}
           />
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
