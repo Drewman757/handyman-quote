@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
     ${contractor.logo_url ? `<div style="text-align:center;padding:20px 24px 0;background:#fff;"><img src="${contractor.logo_url}" alt="${contractor.business_name}" height="64" style="max-height:64px;max-width:200px;object-fit:contain;display:inline-block;" /></div>` : ''}
-    <div style="background:${contractor.brand_color || '#f97316'};padding:24px;text-align:center;">
+    <div style="background:${contractor.brand_color || '#00BFFF'};padding:24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">${contractor.business_name}</h1>
       <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:14px;">Project Quote</p>
     </div>
