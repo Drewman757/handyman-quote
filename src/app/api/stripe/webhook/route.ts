@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     const name = meta.name || ''
     const company = meta.company || ''
     const email = session.customer_email || ''
+    const password = meta.password || ''
     const phone = meta.phone || ''
     const description = meta.description || ''
     const stripeCustomerId = typeof session.customer === 'string' ? session.customer : ''
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       name,
       company,
       email,
+      password,
       phone,
       description,
       stripe_customer_id: stripeCustomerId,

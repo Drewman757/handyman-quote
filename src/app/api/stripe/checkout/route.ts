@@ -10,9 +10,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://handyman-quote.verce
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, company, email, phone, description } = await req.json()
+    const { name, company, email, password, phone, description } = await req.json()
 
-    if (!name || !company || !email || !phone || !description) {
+    if (!name || !company || !email || !password || !phone || !description) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
 
@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
       mode: 'subscription',
       line_items: [{ price: PRICE_ID, quantity: 1 }],
       customer_email: email,
-      metadata: { name, company, phone, description },
+      metadata: { name, company, phone, description, password },
       subscription_data: {
-        metadata: { name, company, phone, description },
+        metadata: { name, company, phone, description, password },
       },
       success_url: `${APP_URL}/request-access/success`,
       cancel_url: `${APP_URL}/request-access`,

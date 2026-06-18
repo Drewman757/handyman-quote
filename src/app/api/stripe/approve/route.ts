@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
 
     const { error: createErr } = await admin.auth.admin.createUser({
       email,
+      password: signup.password,
       email_confirm: true,
     })
 
@@ -65,15 +66,7 @@ export async function GET(req: NextRequest) {
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
-
-    const { data: linkData } = await admin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: { redirectTo: `${siteUrl}/update-password` },
-    })
-
-    const loginLink =
-      linkData?.properties?.action_link || `${siteUrl}/login`
+    const loginLink = `${siteUrl}/login`
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
@@ -91,16 +84,16 @@ export async function GET(req: NextRequest) {
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${signup.name},</p>
       <p style="color:#6b7280;font-size:14px;line-height:1.6;">
-        Your QuoteBuilder account has been approved. Click the button below to set your password and access your QuoteBuilder account.
+        Your QuoteBuilder account has been approved. Click the button below to sign in with the password you chose when you signed up.
       </p>
       <div style="margin:28px 0;text-align:center;">
         <a href="${loginLink}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
-          Set up your password
+          Sign in to QuoteBuilder
         </a>
       </div>
       <p style="font-size:12px;color:#9ca3af;margin-top:16px;">
-        This link expires in 24 hours. If it no longer works, visit
-        <a href="https://handyman-quote.vercel.app/login" style="color:#f97316;">handyman-quote.vercel.app/login</a>
+        If you forgot your password, visit
+        <a href="${siteUrl}/login" style="color:#f97316;">the login page</a>
         and click &ldquo;Forgot password&rdquo;.
       </p>
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#9ca3af;">
