@@ -67,19 +67,39 @@ export async function POST(req: NextRequest) {
 
     // ── Line items HTML ───────────────────────────────────────────────────────
     const isLumpSum = !!(quote as Record<string, unknown>).lump_sum
-    const lineItemsHtml = isLumpSum ? '' : lineItems
+    const lineItemsHtml = lineItems
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
-      .map(li => `
-        <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-            <div style="font-size:14px;color:#111827;">${li.description}</div>
-            ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#9ca3af;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
-          </td>
-          <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827;">
-            ${formatCurrency(li.total as number)}
-          </td>
-        </tr>
-      `).join('')
+      .map(li => {
+        if (li.item_type === 'section') {
+          return `
+            <tr>
+              <td colspan="2" style="padding:10px 8px 6px;background:#f3f4f6;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;">
+                ${li.description}
+              </td>
+            </tr>
+          `
+        }
+        if (isLumpSum) {
+          return `
+            <tr>
+              <td colspan="2" style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+                <div style="font-size:14px;color:#111827;">${li.description}</div>
+              </td>
+            </tr>
+          `
+        }
+        return `
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+              <div style="font-size:14px;color:#111827;">${li.description}</div>
+              ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#9ca3af;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
+            </td>
+            <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827;">
+              ${formatCurrency(li.total as number)}
+            </td>
+          </tr>
+        `
+      }).join('')
 
     // ── Photo thumbnail grid (signed URLs — viewable in email clients) ────────
     const photosHtml = photos.length > 0 ? `
@@ -122,7 +142,7 @@ export async function POST(req: NextRequest) {
         <div style="font-size:13px;color:#374151;">${client.address}, ${client.city}, ${client.state} ${client.zip}</div>
       </div>
 
-      ${isLumpSum ? '' : `<table style="width:100%;border-collapse:collapse;">${lineItemsHtml}</table>`}
+      <table style="width:100%;border-collapse:collapse;">${lineItemsHtml}</table>
 
       <table style="width:100%;border-collapse:collapse;border-top:2px solid #111827;margin-top:16px;">
         ${!isLumpSum && quote.tax_rate > 0 ? `

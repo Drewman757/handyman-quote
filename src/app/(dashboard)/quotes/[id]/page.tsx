@@ -69,25 +69,36 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Line items</h2>
         <div className="space-y-3">
-          {lineItems.sort((a, b) => (a.sort_order as number) - (b.sort_order as number)).map(li => (
-            <div key={li.id as string} className="flex justify-between items-start">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{li.description as string}</p>
-                {li.pricing_type !== 'fixed' && (
-                  <p className="text-xs text-gray-400">
-                    {li.quantity as number} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × {formatCurrency(li.unit_price as number)}
-                  </p>
-                )}
+          {lineItems.sort((a, b) => (a.sort_order as number) - (b.sort_order as number)).map(li => {
+            if (li.item_type === 'section') {
+              return (
+                <div key={li.id as string} className="pt-1.5 pb-0.5">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{li.description as string}</p>
+                </div>
+              )
+            }
+            return (
+              <div key={li.id as string} className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{li.description as string}</p>
+                  {li.pricing_type !== 'fixed' && (
+                    <p className="text-xs text-gray-400">
+                      {li.quantity as number} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × {formatCurrency(li.unit_price as number)}
+                    </p>
+                  )}
+                </div>
+                {!quote.lump_sum && <p className="text-sm font-semibold text-gray-900">{formatCurrency(li.total as number)}</p>}
               </div>
-              <p className="text-sm font-semibold text-gray-900">{formatCurrency(li.total as number)}</p>
-            </div>
-          ))}
+            )
+          })}
         </div>
         <div className="border-t border-gray-100 mt-4 pt-4 space-y-1.5">
-          <div className="flex justify-between text-sm text-gray-600">
-            <span>Subtotal</span><span>{formatCurrency(quote.subtotal)}</span>
-          </div>
-          {quote.tax_rate > 0 && (
+          {!quote.lump_sum && (
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Subtotal</span><span>{formatCurrency(quote.subtotal)}</span>
+            </div>
+          )}
+          {!quote.lump_sum && quote.tax_rate > 0 && (
             <div className="flex justify-between text-sm text-gray-600">
               <span>Tax ({(quote.tax_rate * 100).toFixed(1)}%)</span><span>{formatCurrency(quote.tax_amount)}</span>
             </div>

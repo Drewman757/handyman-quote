@@ -44,6 +44,8 @@ const s = StyleSheet.create({
   thQty: { width: 48, textAlign: 'center', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
   thUnit: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
   thTotal: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
+  sectionRow: { backgroundColor: '#f3f4f6', paddingVertical: 7, paddingHorizontal: 6, marginTop: 8, marginBottom: 2, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  sectionLabel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#374151' },
   row: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   tdDesc: { flex: 4 },
   tdDescMain: { fontSize: 10, color: '#111827' },
@@ -68,7 +70,7 @@ const s = StyleSheet.create({
   lineageLogo: { height: 11, width: 32, objectFit: 'contain', marginRight: 4 },
 })
 
-type LI = { id: string; description: string; pricing_type: string; unit_price: number; quantity: number; total: number; sort_order: number }
+type LI = { id: string; description: string; pricing_type: string; unit_price: number; quantity: number; total: number; sort_order: number; item_type: string }
 type QuoteDoc = {
   quote_number: string; created_at: string
   subtotal: number; tax_rate: number; tax_amount: number; total: number
@@ -137,32 +139,45 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
 
           <View style={s.divider} />
 
-          {q.lump_sum ? null : (
-            <>
-              <View style={s.tableHeader}>
-                <Text style={s.thDesc}>DESCRIPTION</Text>
+          <View style={s.tableHeader}>
+            <Text style={s.thDesc}>DESCRIPTION</Text>
+            {!q.lump_sum ? (
+              <>
                 <Text style={s.thQty}>QTY</Text>
                 <Text style={s.thUnit}>UNIT PRICE</Text>
                 <Text style={s.thTotal}>AMOUNT</Text>
-              </View>
+              </>
+            ) : null}
+          </View>
 
-              {items.map((li) => (
-                <View key={li.id} style={s.row}>
-                  <View style={s.tdDesc}>
-                    <Text style={s.tdDescMain}>{li.description}</Text>
-                    {li.pricing_type !== 'fixed' ? (
-                      <Text style={s.tdDescSub}>
-                        {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
-                  <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
-                  <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
+          {items.map((li) => {
+            if (li.item_type === 'section') {
+              return (
+                <View key={li.id} style={s.sectionRow}>
+                  <Text style={s.sectionLabel}>{li.description}</Text>
                 </View>
-              ))}
-            </>
-          )}
+              )
+            }
+            return (
+              <View key={li.id} style={s.row}>
+                <View style={s.tdDesc}>
+                  <Text style={s.tdDescMain}>{li.description}</Text>
+                  {!q.lump_sum && li.pricing_type !== 'fixed' ? (
+                    <Text style={s.tdDescSub}>
+                      {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
+                    </Text>
+                  ) : null}
+                </View>
+                {!q.lump_sum ? (
+                  <>
+                    <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
+                    <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
+                    <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
+                  </>
+                ) : null}
+              </View>
+            )
+          })}
 
           <View style={s.totalsWrap}>
             <View style={s.totalsBox}>

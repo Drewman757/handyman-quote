@@ -10,14 +10,24 @@ import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLa
 import type { PricingType } from '@/lib/types'
 import { Plus, Trash2, ChevronRight, ChevronLeft, Camera, X, ImageIcon } from 'lucide-react'
 
-interface LineItemDraft {
+interface SectionDraft {
   id: string
+  type: 'section'
+  title: string
+}
+
+interface ItemDraft {
+  id: string
+  type: 'item'
   description: string
   pricing_type: PricingType
   unit_price: number
   quantity: number
   notes: string
 }
+
+type QuoteRow = SectionDraft | ItemDraft
+type ComputedRow = SectionDraft | (ItemDraft & { total: number })
 
 interface PhotoEntry {
   file: File
@@ -46,7 +56,6 @@ export default function NewQuotePage() {
   const priceFocusRef = useRef<HTMLInputElement>(null)
   const [suggestedItemIds, setSuggestedItemIds] = useState<Set<string>>(new Set())
 
-  // Contractor data loaded on mount
   const [existingClients, setExistingClients] = useState<ExistingClient[]>([])
   const [contractorLogoUrl, setContractorLogoUrl] = useState<string | null>(null)
 
@@ -97,12 +106,12 @@ export default function NewQuotePage() {
   const [transcript, setTranscript] = useState('')
   const [notes, setNotes] = useState('')
 
-  // Photos (stored as File + blob preview URL)
+  // Photos
   const [photos, setPhotos] = useState<PhotoEntry[]>([])
 
-  // Line items
-  const [lineItems, setLineItems] = useState<LineItemDraft[]>([{
-    id: crypto.randomUUID(), description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
+  // Rows: sections + line items in display order
+  const [rows, setRows] = useState<QuoteRow[]>([{
+    id: crypto.randomUUID(), type: 'item', description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
   }])
 
   // Quote settings
@@ -147,44 +156,44 @@ export default function NewQuotePage() {
   }
 
   function addLineItem() {
-    setLineItems(prev => [...prev, {
-      id: crypto.randomUUID(), description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
+    setRows(prev => [...prev, {
+      id: crypto.randomUUID(), type: 'item' as const, description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
     }])
+  }
+
+  function addSection() {
+    setRows(prev => [...prev, { id: crypto.randomUUID(), type: 'section' as const, title: '' }])
   }
 
   function addLineItemFromSuggestion({ description, pricing_type, unit_price }: AddLineItemPayload) {
     const newId = crypto.randomUUID()
-    setLineItems(prev => {
-      const onlyBlank = prev.length === 1 && !prev[0].description.trim() && prev[0].unit_price === 0
+    setRows(prev => {
+      const onlyBlank = prev.length === 1 && prev[0].type === 'item' && !(prev[0] as ItemDraft).description.trim() && (prev[0] as ItemDraft).unit_price === 0
       const base = onlyBlank ? [] : prev
-      return [...base, {
-        id: newId,
-        description,
-        pricing_type,
-        unit_price,
-        quantity: 1,
-        notes: '',
-      }]
+      return [...base, { id: newId, type: 'item' as const, description, pricing_type, unit_price, quantity: 1, notes: '' }]
     })
     if (unit_price === 0) {
       setSuggestedItemIds(prev => new Set([...prev, newId]))
     }
   }
 
-  function updateLineItem(id: string, field: string, value: string | number) {
-    setLineItems(prev => prev.map(li => li.id === id ? { ...li, [field]: value } : li))
+  function updateRow(id: string, field: string, value: string | number) {
+    setRows(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row))
   }
 
-  function removeLineItem(id: string) {
-    setLineItems(prev => prev.filter(li => li.id !== id))
+  function removeRow(id: string) {
+    setRows(prev => prev.filter(row => row.id !== id))
   }
 
-  const computed = lineItems.map(li => ({
-    ...li,
-    total: calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity)
-  }))
+  const computedRows: ComputedRow[] = rows.map(row =>
+    row.type === 'section'
+      ? row
+      : { ...row, total: calculateLineItemTotal(row.pricing_type, row.unit_price, row.quantity) }
+  )
+
+  const itemsWithTotals = computedRows.filter((r): r is ItemDraft & { total: number } => r.type === 'item')
   const { subtotal, taxAmount, total } = calculateQuoteTotals(
-    computed.map(li => ({ ...li, sort_order: 0, id: li.id, quote_id: '' })),
+    itemsWithTotals.map(li => ({ ...li, sort_order: 0, quote_id: '' })),
     taxRate / 100
   )
 
@@ -192,7 +201,6 @@ export default function NewQuotePage() {
     setSaving(true)
     setError('')
     try {
-      // Upload photos first (if any)
       let photoUrls: string[] = []
       if (photos.length > 0) {
         const fd = new FormData()
@@ -213,14 +221,26 @@ export default function NewQuotePage() {
           },
           transcript,
           notes,
-          lineItems: computed.filter(li => li.description).map(li => ({
-            description: li.description,
-            pricing_type: li.pricing_type,
-            unit_price: li.unit_price,
-            quantity: li.quantity,
-            total: li.total,
-            notes: li.notes,
-          })),
+          lineItems: computedRows
+            .filter(row =>
+              row.type === 'section'
+                ? (row as SectionDraft).title.trim()
+                : (row as ItemDraft).description.trim()
+            )
+            .map((row, i) =>
+              row.type === 'section'
+                ? { type: 'section', title: (row as SectionDraft).title, sort_order: i }
+                : {
+                    type: 'item',
+                    description: (row as ItemDraft).description,
+                    pricing_type: (row as ItemDraft).pricing_type,
+                    unit_price: (row as ItemDraft).unit_price,
+                    quantity: (row as ItemDraft).quantity,
+                    total: (row as ItemDraft & { total: number }).total,
+                    notes: (row as ItemDraft).notes,
+                    sort_order: i,
+                  }
+            ),
           taxRate,
           paymentTerms,
           caveats,
@@ -277,7 +297,6 @@ export default function NewQuotePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Client information</h2>
 
-          {/* Existing client selector */}
           {existingClients.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select existing client</label>
@@ -447,63 +466,94 @@ export default function NewQuotePage() {
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h2 className="font-semibold text-gray-900">Line items</h2>
             {(() => {
-              const firstSuggestedId = [...suggestedItemIds].find(id =>
-                lineItems.find(li => li.id === id && li.unit_price === 0)
-              ) ?? null
-              return lineItems.map((li, idx) => (
-                <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
-                  {lineItems.length > 1 && (
-                    <button onClick={() => removeLineItem(li.id)} className="text-red-400 hover:text-red-600">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-                <input value={li.description} onChange={e => updateLineItem(li.id, 'description', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
-                  placeholder="Description of work" />
-                <div className="grid grid-cols-3 gap-2">
-                  <select value={li.pricing_type} onChange={e => updateLineItem(li.id, 'pricing_type', e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900">
-                    <option value="fixed">Flat rate</option>
-                    <option value="sqft">Per sq ft</option>
-                    <option value="hourly">Per hour</option>
-                  </select>
-                  {(() => {
-                    const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
-                    return (
+              const firstSuggestedId = [...suggestedItemIds].find(id => {
+                const row = rows.find(r => r.id === id)
+                return row?.type === 'item' && (row as ItemDraft).unit_price === 0
+              }) ?? null
+
+              let itemIndex = 0
+              return rows.map((row) => {
+                if (row.type === 'section') {
+                  return (
+                    <div key={row.id} className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
                       <input
-                        type="number"
-                        ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
-                        value={li.unit_price}
-                        onChange={e => updateLineItem(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                        className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
-                          needsPrice
-                            ? 'border-orange-400 bg-orange-50 focus:ring-orange-500'
-                            : 'border-gray-300 focus:ring-orange-500'
-                        }`}
-                        placeholder={needsPrice ? 'Enter price' : 'Price'}
-                        min={0} step={0.01}
+                        value={row.title}
+                        onChange={e => updateRow(row.id, 'title', e.target.value)}
+                        className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
+                        placeholder="e.g. Flood Room, Master Bathroom…"
                       />
-                    )
-                  })()}
-                  {li.pricing_type !== 'fixed' && (
-                    <input type="number" value={li.quantity} onChange={e => updateLineItem(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
-                      placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
-                  )}
-                </div>
-                <div className="text-right text-sm font-semibold text-gray-900">
-                  {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
-                </div>
-              </div>
-              ))
+                      <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-600 shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )
+                }
+
+                const idx = itemIndex++
+                const li = row as ItemDraft
+                return (
+                  <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
+                      {rows.length > 1 && (
+                        <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
+                      placeholder="Description of work" />
+                    <div className="grid grid-cols-3 gap-2">
+                      <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900">
+                        <option value="fixed">Flat rate</option>
+                        <option value="sqft">Per sq ft</option>
+                        <option value="hourly">Per hour</option>
+                      </select>
+                      {(() => {
+                        const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
+                        return (
+                          <input
+                            type="number"
+                            ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
+                            value={li.unit_price}
+                            onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                            className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
+                              needsPrice
+                                ? 'border-orange-400 bg-orange-50 focus:ring-orange-500'
+                                : 'border-gray-300 focus:ring-orange-500'
+                            }`}
+                            placeholder={needsPrice ? 'Enter price' : 'Price'}
+                            min={0} step={0.01}
+                          />
+                        )
+                      })()}
+                      {li.pricing_type !== 'fixed' && (
+                        <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
+                          placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
+                      )}
+                    </div>
+                    <div className="text-right text-sm font-semibold text-gray-900">
+                      {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
+                    </div>
+                  </div>
+                )
+              })
             })()}
-            <button onClick={addLineItem}
-              className="w-full border-2 border-dashed border-gray-300 hover:border-orange-400 text-gray-500 hover:text-orange-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-              <Plus className="w-4 h-4" /> Add line item
-            </button>
+
+            <div className="flex gap-2">
+              <button onClick={addLineItem}
+                className="flex-1 border-2 border-dashed border-gray-300 hover:border-orange-400 text-gray-500 hover:text-orange-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" /> Add line item
+              </button>
+              <button onClick={addSection}
+                className="border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-500 py-3 px-4 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 whitespace-nowrap">
+                <Plus className="w-4 h-4" /> Add section
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
@@ -528,7 +578,7 @@ export default function NewQuotePage() {
             <div className="flex items-center justify-between pt-1">
               <div>
                 <p className="text-sm font-medium text-gray-700">Lump sum quote</p>
-                <p className="text-xs text-gray-400 mt-0.5">Client sees total only — line items stay private</p>
+                <p className="text-xs text-gray-400 mt-0.5">Client sees descriptions and total only — prices stay private</p>
               </div>
               <button
                 type="button"
@@ -553,7 +603,6 @@ export default function NewQuotePage() {
       {step === 3 && (
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            {/* Contractor logo preview */}
             {contractorLogoUrl && (
               <div className="pb-4 border-b border-gray-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -571,23 +620,47 @@ export default function NewQuotePage() {
               <p>{clientAddress}, {clientCity}, {clientState} {clientZip}</p>
               <p>{clientPhone} · {clientEmail}</p>
             </div>
+
             <div className="border-t border-gray-100 pt-4 space-y-2">
-              {lumpSum ? (
-                <p className="text-xs text-gray-400 italic">Lump sum — client sees total only</p>
-              ) : computed.filter(li => li.description).map(li => (
-                <div key={li.id} className="flex justify-between text-sm">
-                  <span className="text-gray-700">{li.description}
-                    {li.pricing_type !== 'fixed' && <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>}
-                  </span>
-                  <span className="font-medium text-gray-900">{formatCurrency(li.total)}</span>
-                </div>
-              ))}
+              {computedRows
+                .filter(row =>
+                  row.type === 'section'
+                    ? (row as SectionDraft).title.trim()
+                    : (row as ItemDraft).description.trim()
+                )
+                .map(row => {
+                  if (row.type === 'section') {
+                    return (
+                      <div key={row.id} className="pt-1.5 pb-0.5">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{(row as SectionDraft).title}</p>
+                      </div>
+                    )
+                  }
+                  const li = row as ItemDraft & { total: number }
+                  return (
+                    <div key={li.id} className="flex justify-between text-sm">
+                      <span className="text-gray-700">
+                        {li.description}
+                        {li.pricing_type !== 'fixed' && (
+                          <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>
+                        )}
+                      </span>
+                      {!lumpSum && <span className="font-medium text-gray-900">{formatCurrency(li.total)}</span>}
+                    </div>
+                  )
+                })}
+              {lumpSum && (
+                <p className="text-xs text-gray-400 italic mt-1">Prices hidden — client sees descriptions and total only</p>
+              )}
             </div>
+
             <div className="border-t border-gray-100 pt-3 space-y-1">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
-              </div>
-              {taxRate > 0 && (
+              {!lumpSum && (
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
+                </div>
+              )}
+              {!lumpSum && taxRate > 0 && (
                 <div className="flex justify-between text-sm text-gray-600">
                   <span>Tax ({taxRate}%)</span><span>{formatCurrency(taxAmount)}</span>
                 </div>
@@ -596,13 +669,13 @@ export default function NewQuotePage() {
                 <span>Total</span><span>{formatCurrency(total)}</span>
               </div>
             </div>
+
             {paymentTerms && (
               <div className="border-t border-gray-100 pt-3">
                 <p className="text-xs text-gray-500">{paymentTerms}</p>
               </div>
             )}
 
-            {/* Photo preview */}
             {photos.length > 0 && (
               <div className="border-t border-gray-100 pt-4">
                 <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">

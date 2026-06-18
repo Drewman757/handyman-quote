@@ -145,10 +145,15 @@ export async function POST(req: NextRequest) {
 
     // ── 6. Compute totals ──────────────────────────────────────────────────
     step = 'totals'
-    const validItems = ((lineItems ?? []) as {
-      description: string; pricing_type: string
-      unit_price: number; quantity: number; total: number; notes: string
-    }[]).filter((li) => li.description?.trim())
+    type SectionRow = { type: 'section'; title: string; sort_order: number }
+    type ItemRow = { type: 'item'; description: string; pricing_type: string; unit_price: number; quantity: number; total: number; notes: string; sort_order: number }
+    type AnyRow = SectionRow | ItemRow
+
+    const allRows = ((lineItems ?? []) as AnyRow[])
+    const validRows = allRows.filter(row =>
+      row.type === 'section' ? (row as SectionRow).title?.trim() : (row as ItemRow).description?.trim()
+    )
+    const validItems = validRows.filter((r): r is ItemRow => r.type === 'item')
 
     const subtotal = validItems.reduce((sum, li) => sum + (li.total ?? 0), 0)
     const taxRateFraction = ((taxRate ?? 0) as number) / 100
@@ -180,20 +185,34 @@ export async function POST(req: NextRequest) {
       .single()
     if (quoteErr) throw quoteErr
 
-    // ── 8. Insert line items ───────────────────────────────────────────────
+    // ── 8. Insert line items (sections + items) ────────────────────────────
     step = 'line-items'
-    if (validItems.length > 0) {
+    if (validRows.length > 0) {
       const { error: liErr } = await admin.from('line_items').insert(
-        validItems.map((li, i) => ({
-          quote_id: quote!.id,
-          description: li.description,
-          pricing_type: li.pricing_type,
-          unit_price: li.unit_price,
-          quantity: li.quantity,
-          total: li.total,
-          sort_order: i,
-          notes: li.notes || null,
-        }))
+        validRows.map((row, i) =>
+          row.type === 'section'
+            ? {
+                quote_id: quote!.id,
+                item_type: 'section',
+                description: (row as SectionRow).title,
+                pricing_type: 'fixed',
+                unit_price: 0,
+                quantity: 1,
+                total: 0,
+                sort_order: (row as SectionRow).sort_order ?? i,
+              }
+            : {
+                quote_id: quote!.id,
+                item_type: 'item',
+                description: (row as ItemRow).description,
+                pricing_type: (row as ItemRow).pricing_type,
+                unit_price: (row as ItemRow).unit_price,
+                quantity: (row as ItemRow).quantity,
+                total: (row as ItemRow).total,
+                sort_order: (row as ItemRow).sort_order ?? i,
+                notes: (row as ItemRow).notes || null,
+              }
+        )
       )
       if (liErr) throw liErr
     }
