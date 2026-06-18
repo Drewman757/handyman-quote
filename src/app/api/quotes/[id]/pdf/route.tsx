@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, renderToBuffer, Image, Font } from '@react-pdf/renderer'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +13,16 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
 )
+
+// Register Open Sans so ligature glyphs (fl, fi, ff, etc.) render correctly.
+// Helvetica's built-in ligature substitution drops characters like "fl" entirely.
+Font.register({
+  family: 'Open Sans',
+  fonts: [
+    { src: 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0C11.ttf' },
+    { src: 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjd0C11.ttf', fontWeight: 700 },
+  ],
+})
 
 // Read the Lineage Labs logo once at cold-start. Falls back gracefully if the
 // file isn't accessible in the Lambda environment.
@@ -27,42 +37,42 @@ function readLineageLogo(): string {
 const lineageLogoSrc = readLineageLogo()
 
 const s = StyleSheet.create({
-  page: { paddingBottom: 56, fontFamily: 'Helvetica', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
+  page: { paddingBottom: 56, fontFamily: 'Open Sans', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
   header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48, flexDirection: 'column', alignItems: 'center' },
   contractorLogo: { width: 160, height: 52, objectFit: 'contain', marginBottom: 10 },
-  companyName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: '#fff', marginBottom: 4, textAlign: 'center' },
+  companyName: { fontSize: 22, fontFamily: 'Open Sans', fontWeight: 700, color: '#fff', marginBottom: 4, textAlign: 'center' },
   license: { fontSize: 10, color: '#fed7aa', textAlign: 'center' },
   body: { paddingHorizontal: 48, paddingTop: 28 },
   metaRow: { flexDirection: 'row', marginBottom: 24 },
   metaCol: { flex: 1, paddingRight: 12 },
-  metaLabel: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
-  metaName: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#111827', marginBottom: 2 },
+  metaLabel: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
+  metaName: { fontSize: 11, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827', marginBottom: 2 },
   metaText: { fontSize: 9, color: '#4b5563', marginBottom: 2 },
   divider: { height: 1, backgroundColor: '#e5e7eb', marginBottom: 20 },
   tableHeader: { flexDirection: 'row', borderBottomWidth: 2, borderBottomColor: '#111827', paddingBottom: 6, marginBottom: 4 },
-  thDesc: { flex: 4, fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
-  thQty: { width: 48, textAlign: 'center', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
-  thUnit: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
-  thTotal: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#6b7280' },
+  thDesc: { flex: 4, fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
+  thQty: { width: 48, textAlign: 'center', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
+  thUnit: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
+  thTotal: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
   sectionRow: { backgroundColor: '#f3f4f6', paddingVertical: 7, paddingHorizontal: 6, marginTop: 8, marginBottom: 2, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  sectionLabel: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#374151' },
+  sectionLabel: { fontSize: 10, fontFamily: 'Open Sans', fontWeight: 700, color: '#374151' },
   row: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   tdDesc: { flex: 4 },
   tdDescMain: { fontSize: 10, color: '#111827' },
   tdDescSub: { fontSize: 8, color: '#9ca3af', marginTop: 2 },
   tdQty: { width: 48, textAlign: 'center', fontSize: 10, color: '#374151' },
   tdUnit: { width: 72, textAlign: 'right', fontSize: 10, color: '#374151' },
-  tdTotal: { width: 72, textAlign: 'right', fontSize: 10, fontFamily: 'Helvetica-Bold', color: '#111827' },
+  tdTotal: { width: 72, textAlign: 'right', fontSize: 10, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
   totalsWrap: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 },
   totalsBox: { width: 200 },
   trow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
   tlabel: { fontSize: 10, color: '#6b7280' },
   tvalue: { fontSize: 10, color: '#374151' },
   grandRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 2, borderTopColor: '#111827', paddingTop: 6, marginTop: 4 },
-  grandLabel: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: '#111827' },
-  grandValue: { fontSize: 13, fontFamily: 'Helvetica-Bold', color: '#111827' },
+  grandLabel: { fontSize: 13, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
+  grandValue: { fontSize: 13, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
   terms: { marginTop: 28, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  termsTitle: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
+  termsTitle: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
   termsBody: { fontSize: 9, color: '#6b7280', lineHeight: 1.5 },
   footer: { position: 'absolute', bottom: 20, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 8 },
   footerText: { fontSize: 8, color: '#9ca3af' },
