@@ -136,6 +136,8 @@ export async function POST(req: NextRequest) {
     <div style="background:${contractor.brand_color || '#00BFFF'};padding:24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">${contractor.business_name}</h1>
       <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:14px;">Project Quote</p>
+      ${contractor.license_number ? `<p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:12px;">License #${contractor.license_number}</p>` : ''}
+      ${contractor.insurance_number ? `<p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:12px;">Insurance #${contractor.insurance_number}</p>` : ''}
     </div>
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${client.name},</p>
