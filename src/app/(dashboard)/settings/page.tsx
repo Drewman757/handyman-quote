@@ -14,7 +14,8 @@ export default function SettingsPage() {
 
   const [form, setForm] = useState({
     business_name: '', owner_name: '', phone: '', email: '',
-    license_number: '', default_payment_terms: 'Payment due upon completion.', default_caveats: '', financing_options: ''
+    license_number: '', insurance_number: '', address: '', website: '',
+    default_payment_terms: 'Payment due upon completion.', default_caveats: '', financing_options: ''
   })
 
   useEffect(() => {
@@ -110,6 +111,9 @@ export default function SettingsPage() {
           { label: 'Phone', key: 'phone' },
           { label: 'Email', key: 'email' },
           { label: 'License number', key: 'license_number' },
+          { label: 'Insurance number', key: 'insurance_number' },
+          { label: 'Address', key: 'address' },
+          { label: 'Website', key: 'website' },
         ].map(({ label, key }) => (
           <div key={key}>
             <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
