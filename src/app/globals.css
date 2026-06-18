@@ -39,3 +39,16 @@ input::-webkit-strong-password-auto-fill-button {
   display: none !important;
   pointer-events: none;
 }
+
+/* Brand color theming — set --brand-color on [data-brand] and all orange-* Tailwind
+   utilities within that scope automatically reflect the contractor's brand color.
+   color-mix() is baseline-supported in all evergreen browsers since 2023. */
+[data-brand] {
+  --color-orange-50:  color-mix(in srgb, var(--brand-color) 8%,  white);
+  --color-orange-100: color-mix(in srgb, var(--brand-color) 15%, white);
+  --color-orange-300: color-mix(in srgb, var(--brand-color) 60%, white);
+  --color-orange-400: color-mix(in srgb, var(--brand-color) 80%, white);
+  --color-orange-500: var(--brand-color);
+  --color-orange-600: color-mix(in srgb, var(--brand-color) 85%, black 15%);
+  --color-orange-700: color-mix(in srgb, var(--brand-color) 70%, black 30%);
+}

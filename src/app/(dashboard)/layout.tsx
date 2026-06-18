@@ -22,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [brandColor, setBrandColor] = useState('#f97316')
 
   useEffect(() => {
     async function loadContractor() {
@@ -29,12 +30,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!user) return
       const { data } = await supabase
         .from('contractors')
-        .select('is_admin, logo_url')
+        .select('is_admin, logo_url, brand_color')
         .eq('user_id', user.id)
         .single()
       if (data?.is_admin) setIsAdmin(true)
-      console.log('[sidebar] logo_url:', data?.logo_url)
       if (data?.logo_url) setLogoUrl(data.logo_url)
+      if (data?.brand_color) setBrandColor(data.brand_color)
     }
     loadContractor()
   }, [])
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex" data-brand style={{ '--brand-color': brandColor } as React.CSSProperties}>
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-200
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex`}>
