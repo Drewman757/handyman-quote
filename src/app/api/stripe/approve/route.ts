@@ -66,14 +66,11 @@ export async function GET(req: NextRequest) {
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
 
-    const { data: linkData } = await admin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: { redirectTo: `${siteUrl}/auth/confirm?next=/update-password` },
+    await admin.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/auth/confirm?next=/update-password`,
     })
 
-    const loginLink =
-      linkData?.properties?.action_link || 'https://handyman-quote.vercel.app/login'
+    const loginLink = `${siteUrl}/login`
 
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
