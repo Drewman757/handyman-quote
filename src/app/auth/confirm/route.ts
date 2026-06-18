@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as 'magiclink' | 'email' | null
+  const type = searchParams.get('type') as 'magiclink' | 'email' | 'recovery' | null
   const next = searchParams.get('next') ?? '/dashboard'
 
   if (token_hash && type) {
@@ -27,7 +27,8 @@ export async function GET(req: NextRequest) {
 
     const { error } = await supabase.auth.verifyOtp({ type, token_hash })
     if (!error) {
-      return NextResponse.redirect(new URL(next, req.url))
+      const redirectPath = type === 'recovery' ? '/update-password' : next
+      return NextResponse.redirect(new URL(redirectPath, req.url))
     }
   }
 
