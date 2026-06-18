@@ -77,7 +77,7 @@ type QuoteDoc = {
   payment_terms: string | null; caveats: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
   lump_sum: boolean
-  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null; address: string | null; website: string | null; insurance_number: string | null }
+  contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null; address: string | null; website: string | null; insurance_number: string | null; brand_color: string | null }
   line_items: LI[]
 }
 
@@ -90,7 +90,7 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
       <Page size="LETTER" style={s.page}>
 
         {/* ── Header ── */}
-        <View style={s.header}>
+        <View style={[s.header, { backgroundColor: q.contractor.brand_color || '#f97316' }]}>
           {contractorLogoSrc ? (
             <Image src={contractorLogoSrc} style={s.contractorLogo} />
           ) : null}

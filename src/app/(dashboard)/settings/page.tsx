@@ -15,6 +15,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     business_name: '', owner_name: '', phone: '', email: '',
     license_number: '', insurance_number: '', address: '', website: '',
+    brand_color: '#f97316',
     default_payment_terms: 'Payment due upon completion.', default_caveats: '', financing_options: ''
   })
 
@@ -105,6 +106,21 @@ export default function SettingsPage() {
       {/* Main business info form */}
       <form onSubmit={handleSave} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900">Business information</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Brand color</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={form.brand_color}
+              onChange={e => setForm(f => ({ ...f, brand_color: e.target.value }))}
+              className="h-10 w-16 rounded-lg border border-gray-300 cursor-pointer p-0.5"
+            />
+            <div>
+              <p className="text-sm font-mono text-gray-700">{form.brand_color}</p>
+              <p className="text-xs text-gray-400">Used on your PDF quotes and quote previews.</p>
+            </div>
+          </div>
+        </div>
         {[
           { label: 'Business name', key: 'business_name' },
           { label: 'Your name', key: 'owner_name' },
