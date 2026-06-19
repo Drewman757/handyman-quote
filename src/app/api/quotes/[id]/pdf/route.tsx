@@ -39,44 +39,46 @@ const lineageLogoSrc = readLineageLogo()
 
 const s = StyleSheet.create({
   page: { paddingBottom: 56, fontFamily: 'Open Sans', fontSize: 10, color: '#111827', backgroundColor: '#fff' },
-  header: { backgroundColor: '#ea580c', paddingVertical: 28, paddingHorizontal: 48, flexDirection: 'column', alignItems: 'center' },
+  headerOuter: { backgroundColor: '#fff', flexDirection: 'column' },
+  headerContent: { paddingTop: 24, paddingBottom: 16, paddingHorizontal: 48, flexDirection: 'column', alignItems: 'center' },
+  headerBar: { height: 4 },
   contractorLogo: { width: 160, height: 52, objectFit: 'contain', marginBottom: 10 },
-  companyName: { fontSize: 22, fontFamily: 'Open Sans', fontWeight: 700, color: '#fff', marginBottom: 4, textAlign: 'center' },
-  license: { fontSize: 10, color: '#fed7aa', textAlign: 'center' },
+  companyName: { fontSize: 20, fontFamily: 'Open Sans', fontWeight: 700, color: '#1a1a1a', marginBottom: 4, textAlign: 'center' },
+  headerInfo: { fontSize: 10, color: '#444', textAlign: 'center', marginBottom: 2 },
   body: { paddingHorizontal: 48, paddingTop: 28 },
   metaRow: { flexDirection: 'row', marginBottom: 24 },
   metaCol: { flex: 1, paddingRight: 12 },
-  metaLabel: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
+  metaLabel: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#666', letterSpacing: 0.8, marginBottom: 5 },
   metaName: { fontSize: 11, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827', marginBottom: 2 },
   metaText: { fontSize: 9, color: '#4b5563', marginBottom: 2 },
   divider: { height: 1, backgroundColor: '#e5e7eb', marginBottom: 20 },
   tableHeader: { flexDirection: 'row', borderBottomWidth: 2, borderBottomColor: '#111827', paddingBottom: 6, marginBottom: 4 },
-  thDesc: { flex: 4, fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
-  thQty: { width: 48, textAlign: 'center', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
-  thUnit: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
-  thTotal: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#6b7280' },
+  thDesc: { flex: 4, fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#555' },
+  thQty: { width: 48, textAlign: 'center', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#555' },
+  thUnit: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#555' },
+  thTotal: { width: 72, textAlign: 'right', fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#555' },
   sectionRow: { backgroundColor: '#f3f4f6', paddingVertical: 7, paddingHorizontal: 6, marginTop: 8, marginBottom: 2, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   sectionLabel: { fontSize: 10, fontFamily: 'Open Sans', fontWeight: 700, color: '#374151' },
   row: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
   tdDesc: { flex: 4 },
   tdDescMain: { fontSize: 10, color: '#111827' },
-  tdDescSub: { fontSize: 8, color: '#9ca3af', marginTop: 2 },
+  tdDescSub: { fontSize: 8, color: '#666', marginTop: 2 },
   tdQty: { width: 48, textAlign: 'center', fontSize: 10, color: '#374151' },
   tdUnit: { width: 72, textAlign: 'right', fontSize: 10, color: '#374151' },
   tdTotal: { width: 72, textAlign: 'right', fontSize: 10, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
   totalsWrap: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 16 },
   totalsBox: { width: 200 },
   trow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  tlabel: { fontSize: 10, color: '#6b7280' },
+  tlabel: { fontSize: 10, color: '#555' },
   tvalue: { fontSize: 10, color: '#374151' },
   grandRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 2, borderTopColor: '#111827', paddingTop: 6, marginTop: 4 },
   grandLabel: { fontSize: 13, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
   grandValue: { fontSize: 13, fontFamily: 'Open Sans', fontWeight: 700, color: '#111827' },
   terms: { marginTop: 28, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  termsTitle: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#9ca3af', letterSpacing: 0.8, marginBottom: 5 },
-  termsBody: { fontSize: 9, color: '#6b7280', lineHeight: 1.5 },
+  termsTitle: { fontSize: 7, fontFamily: 'Open Sans', fontWeight: 700, color: '#666', letterSpacing: 0.8, marginBottom: 5 },
+  termsBody: { fontSize: 9, color: '#555', lineHeight: 1.5 },
   footer: { position: 'absolute', bottom: 20, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingTop: 8 },
-  footerText: { fontSize: 8, color: '#9ca3af' },
+  footerText: { fontSize: 8, color: '#888' },
   footerBrand: { flexDirection: 'row', alignItems: 'center' },
   lineageLogo: { height: 11, width: 32, objectFit: 'contain', marginRight: 4 },
 })
@@ -108,24 +110,27 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
       <Page size="LETTER" style={s.page}>
 
         {/* ── Header ── */}
-        <View style={[s.header, { backgroundColor: q.contractor.brand_color || '#f97316' }]}>
-          {contractorLogoSrc ? (
-            <Image src={contractorLogoSrc} style={s.contractorLogo} />
-          ) : null}
-          <Text style={s.companyName}>{q.contractor.business_name}</Text>
-          {q.contractor.address ? (
-            <Text style={s.license}>{q.contractor.address}</Text>
-          ) : null}
-          <Text style={s.license}>{q.contractor.phone} · {q.contractor.email}</Text>
-          {q.contractor.website ? (
-            <Text style={s.license}>{q.contractor.website}</Text>
-          ) : null}
-          {q.contractor.license_number ? (
-            <Text style={s.license}>License #{q.contractor.license_number}</Text>
-          ) : null}
-          {q.contractor.insurance_number ? (
-            <Text style={s.license}>Insurance #{q.contractor.insurance_number}</Text>
-          ) : null}
+        <View style={s.headerOuter}>
+          <View style={s.headerContent}>
+            {contractorLogoSrc ? (
+              <Image src={contractorLogoSrc} style={s.contractorLogo} />
+            ) : null}
+            <Text style={s.companyName}>{q.contractor.business_name}</Text>
+            {q.contractor.address ? (
+              <Text style={s.headerInfo}>{q.contractor.address}</Text>
+            ) : null}
+            <Text style={s.headerInfo}>{q.contractor.phone} · {q.contractor.email}</Text>
+            {q.contractor.website ? (
+              <Text style={s.headerInfo}>{q.contractor.website}</Text>
+            ) : null}
+            {q.contractor.license_number ? (
+              <Text style={s.headerInfo}>License #{q.contractor.license_number}</Text>
+            ) : null}
+            {q.contractor.insurance_number ? (
+              <Text style={s.headerInfo}>Insurance #{q.contractor.insurance_number}</Text>
+            ) : null}
+          </View>
+          <View style={[s.headerBar, { backgroundColor: q.contractor.brand_color || '#0E6E7E' }]} />
         </View>
 
         {/* ── Body ── */}

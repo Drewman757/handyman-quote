@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
     const sections: ClaudeSection[] = (result.sections ?? [])
       .filter(s => s.title && Array.isArray(s.items) && s.items.length > 0)
       .map(s => ({
-        title: s.title,
+        title: s.title.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()),
         items: s.items
           .filter(item => item.description)
           .map(item => ({
