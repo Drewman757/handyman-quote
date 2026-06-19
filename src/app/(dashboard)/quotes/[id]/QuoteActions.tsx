@@ -47,7 +47,7 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain touch-pan-x">
       <a
         href={`/quotes/${quoteId}/edit`}
         className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition"

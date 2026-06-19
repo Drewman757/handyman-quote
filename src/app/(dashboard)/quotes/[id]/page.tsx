@@ -31,15 +31,17 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const lineItems = (quote.line_items as Record<string, unknown>[]) || []
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/quotes" className="text-gray-400 hover:text-gray-600"><ArrowLeft className="w-5 h-5" /></Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-gray-900">{quote.quote_number}</h1>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[quote.status]}`}>{quote.status}</span>
+    <div className="max-w-2xl mx-auto space-y-6 overflow-x-hidden">
+      <div className="space-y-3">
+        <div className="flex items-center gap-4">
+          <Link href="/quotes" className="text-gray-400 hover:text-gray-600"><ArrowLeft className="w-5 h-5" /></Link>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-gray-900">{quote.quote_number}</h1>
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[quote.status]}`}>{quote.status}</span>
+            </div>
+            <p className="text-sm text-gray-500">{client?.name}</p>
           </div>
-          <p className="text-sm text-gray-500">{client?.name}</p>
         </div>
         <QuoteActions quoteId={quote.id} status={quote.status} clientEmail={client?.email} />
       </div>
