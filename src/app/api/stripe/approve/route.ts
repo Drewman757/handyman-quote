@@ -72,6 +72,7 @@ export async function GET(req: NextRequest) {
         owner_name: signup.name,
         phone: signup.phone,
         email,
+        agreed_to_terms_at: signup.agreed_to_terms_at || null,
       })
       if (contractorErr) {
         console.error('[approve] insert contractor failed', contractorErr)

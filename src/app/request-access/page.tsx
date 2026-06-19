@@ -1,15 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function RequestAccessPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const [agreedAt, setAgreedAt] = useState('')
+  const [showTermsError, setShowTermsError] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!agreed) {
+      setShowTermsError(true)
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
@@ -31,6 +40,7 @@ export default function RequestAccessPage() {
       password,
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       description: (form.elements.namedItem('description') as HTMLTextAreaElement).value,
+      agreedToTermsAt: agreedAt,
     }
 
     const res = await fetch('/api/stripe/checkout', {
@@ -140,14 +150,55 @@ export default function RequestAccessPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] resize-none"
               />
             </div>
+
+            {/* Terms agreement */}
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 space-y-3">
+              <p className="text-xs text-gray-600 leading-relaxed">
+                By signing up, you agree that Lineage Labs LLC may access, store, and use the information you enter into
+                QuoteBuilder — including quote, job, and business data — to operate, maintain, support, and improve QuoteBuilder
+                and Lineage Labs&rsquo; other products and services, including improving our AI features. You retain ownership of
+                your business data. You&rsquo;re responsible for having the right to enter any client/customer information you
+                input. We don&rsquo;t sell your data to third parties.
+              </p>
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={e => {
+                    setAgreed(e.target.checked)
+                    if (e.target.checked) setAgreedAt(new Date().toISOString())
+                    if (e.target.checked) setShowTermsError(false)
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#0E6E7E] focus:ring-[#0E6E7E] flex-shrink-0"
+                />
+                <span className="text-xs text-gray-700 leading-relaxed">
+                  I have read and agree to the Data Use Agreement,{' '}
+                  <Link href="/terms" target="_blank" className="text-[#0E6E7E] hover:underline font-medium">
+                    Terms of Service
+                  </Link>
+                  , and{' '}
+                  <Link href="/privacy" target="_blank" className="text-[#0E6E7E] hover:underline font-medium">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+              {showTermsError && !agreed && (
+                <p className="text-xs text-red-600">Please accept the Terms of Service and Privacy Policy to continue.</p>
+              )}
+            </div>
+
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
-            >
-              {loading ? 'Redirecting to checkout…' : 'Continue to payment →'}
-            </button>
+
+            <div onClick={() => !agreed && setShowTermsError(true)}>
+              <button
+                type="submit"
+                disabled={!agreed || loading}
+                className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Redirecting to checkout…' : 'Continue to payment →'}
+              </button>
+            </div>
           </form>
         </div>
 

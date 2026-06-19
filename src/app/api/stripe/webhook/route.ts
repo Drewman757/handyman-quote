@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
 
     const admin = getAdmin()
 
+    const agreedToTermsAt = meta.agreed_to_terms_at || null
+
     const { error: insertErr } = await admin.from('pending_signups').insert({
       name,
       company,
@@ -65,6 +67,7 @@ export async function POST(req: NextRequest) {
       description,
       stripe_customer_id: stripeCustomerId,
       stripe_subscription_id: stripeSubscriptionId,
+      agreed_to_terms_at: agreedToTermsAt,
     })
 
     if (insertErr) {
