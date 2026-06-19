@@ -60,6 +60,9 @@ const s = StyleSheet.create({
   sectionRow: { backgroundColor: '#f3f4f6', paddingVertical: 7, paddingHorizontal: 6, marginTop: 8, marginBottom: 2, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   sectionLabel: { fontSize: 10, fontFamily: 'Open Sans', fontWeight: 700, color: '#374151' },
   row: { flexDirection: 'row', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  // Applied to item rows that fall under a named section header — left margin + teal accent bar.
+  // Flat quotes (no sections) never set inSection so these rows stay unaffected.
+  rowIndented: { marginLeft: 12, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#1A8A9C' },
   tdDesc: { flex: 4 },
   tdDescMain: { fontSize: 10, color: '#111827' },
   tdDescSub: { fontSize: 8, color: '#666', marginTop: 2 },
@@ -173,34 +176,38 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
             ) : null}
           </View>
 
-          {items.map((li) => {
-            if (li.item_type === 'section') {
+          {(() => {
+            let inSection = false
+            return items.map((li) => {
+              if (li.item_type === 'section') {
+                inSection = true
+                return (
+                  <View key={li.id} style={s.sectionRow}>
+                    <Text style={s.sectionLabel}>{sanitizeText(li.description)}</Text>
+                  </View>
+                )
+              }
               return (
-                <View key={li.id} style={s.sectionRow}>
-                  <Text style={s.sectionLabel}>{sanitizeText(li.description)}</Text>
-                </View>
-              )
-            }
-            return (
-              <View key={li.id} style={s.row}>
-                <View style={s.tdDesc}>
-                  <Text style={s.tdDescMain}>{sanitizeText(li.description)}</Text>
-                  {!q.lump_sum && li.pricing_type !== 'fixed' ? (
-                    <Text style={s.tdDescSub}>
-                      {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
-                    </Text>
+                <View key={li.id} style={inSection ? [s.row, s.rowIndented] : s.row}>
+                  <View style={s.tdDesc}>
+                    <Text style={s.tdDescMain}>{sanitizeText(li.description)}</Text>
+                    {!q.lump_sum && li.pricing_type !== 'fixed' ? (
+                      <Text style={s.tdDescSub}>
+                        {li.quantity} {getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ {formatCurrency(li.unit_price)}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {!q.lump_sum ? (
+                    <>
+                      <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
+                      <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
+                      <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
+                    </>
                   ) : null}
                 </View>
-                {!q.lump_sum ? (
-                  <>
-                    <Text style={s.tdQty}>{li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}</Text>
-                    <Text style={s.tdUnit}>{formatCurrency(li.unit_price)}</Text>
-                    <Text style={s.tdTotal}>{formatCurrency(li.total)}</Text>
-                  </>
-                ) : null}
-              </View>
-            )
-          })}
+              )
+            })
+          })()}
 
           <View style={s.totalsWrap}>
             <View style={s.totalsBox}>
