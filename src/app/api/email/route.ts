@@ -82,14 +82,16 @@ export async function POST(req: NextRequest) {
       return text.replace(/\//g, ' ').replace(/\s{2,}/g, ' ').trim()
     }
 
+    const quoteDate = new Date(quote.created_at as string).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     const isLumpSum = !!(quote as Record<string, unknown>).lump_sum
+    const colSpan = isLumpSum ? 1 : 4
     const lineItemsHtml = lineItems
       .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
       .map(li => {
         if (li.item_type === 'section') {
           return `
             <tr>
-              <td colspan="2" style="padding:10px 8px 6px;background:#f3f4f6;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;">
+              <td colspan="${colSpan}" style="padding:7px 8px;background:#f3f4f6;font-size:13px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;">
                 ${sanitizeText(li.description as string)}
               </td>
             </tr>
@@ -98,24 +100,39 @@ export async function POST(req: NextRequest) {
         if (isLumpSum) {
           return `
             <tr>
-              <td colspan="2" style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                <div style="font-size:14px;color:#111827;">${sanitizeText(li.description as string)}</div>
+              <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px;color:#111827;">
+                ${sanitizeText(li.description as string)}
               </td>
             </tr>
           `
         }
         return `
           <tr>
-            <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-              <div style="font-size:14px;color:#111827;">${sanitizeText(li.description as string)}</div>
-              ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#666;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
+            <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px;color:#111827;">
+              ${sanitizeText(li.description as string)}
+              ${li.pricing_type !== 'fixed' ? `<div style="font-size:11px;color:#666;margin-top:2px;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} @ ${formatCurrency(li.unit_price as number)}</div>` : ''}
             </td>
-            <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827;">
+            <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;text-align:center;font-size:13px;color:#374151;width:44px;">
+              ${li.pricing_type !== 'fixed' ? String(li.quantity) : '—'}
+            </td>
+            <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:13px;color:#374151;width:80px;">
+              ${formatCurrency(li.unit_price as number)}
+            </td>
+            <td style="padding:8px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:13px;font-weight:700;color:#111827;width:80px;">
               ${formatCurrency(li.total as number)}
             </td>
           </tr>
         `
       }).join('')
+
+    const tableHeaderHtml = isLumpSum ? '' : `
+      <tr>
+        <td style="padding-bottom:6px;font-size:10px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid #111827;">Description</td>
+        <td style="padding-bottom:6px;font-size:10px;font-weight:700;color:#555;text-align:center;width:44px;border-bottom:2px solid #111827;">Qty</td>
+        <td style="padding-bottom:6px;font-size:10px;font-weight:700;color:#555;text-align:right;width:80px;border-bottom:2px solid #111827;">Unit Price</td>
+        <td style="padding-bottom:6px;font-size:10px;font-weight:700;color:#555;text-align:right;width:80px;border-bottom:2px solid #111827;">Amount</td>
+      </tr>
+    `
 
     // ── Photo thumbnail grid (signed URLs — viewable in email clients) ────────
     const photosHtml = photos.length > 0 ? `
@@ -153,15 +170,29 @@ export async function POST(req: NextRequest) {
     </div>
     <div style="height:4px;background:${contractor.brand_color || '#0E6E7E'};"></div>
     <div style="padding:24px;">
-      <p style="color:#374151;font-size:15px;">Hi ${client.name},</p>
-      <p style="color:#555;font-size:14px;line-height:1.6;">Thank you for the opportunity. Please find your project quote below.</p>
+      <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:20px;">
+        <tr>
+          <td style="vertical-align:top;padding-right:16px;">
+            <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Prepared For</div>
+            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${client.name}</div>
+            <div style="font-size:11px;color:#4b5563;line-height:1.6;">${client.address}<br>${client.city}, ${client.state} ${client.zip}<br>${client.phone}<br>${client.email}</div>
+          </td>
+          <td style="vertical-align:top;padding-right:16px;">
+            <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">From</div>
+            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${contractor.business_name}</div>
+            <div style="font-size:11px;color:#4b5563;line-height:1.6;">${contractor.owner_name ? contractor.owner_name + '<br>' : ''}${contractor.address ? contractor.address + '<br>' : ''}${contractor.phone}<br>${contractor.email}${contractor.website ? '<br>' + contractor.website : ''}</div>
+          </td>
+          <td style="vertical-align:top;">
+            <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Quote</div>
+            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${quote.quote_number}</div>
+            <div style="font-size:11px;color:#4b5563;">${quoteDate}</div>
+          </td>
+        </tr>
+      </table>
 
-      <div style="background:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
-        <div style="font-size:12px;color:#666;margin-bottom:4px;">QUOTE ${quote.quote_number}</div>
-        <div style="font-size:13px;color:#374151;">${client.address}, ${client.city}, ${client.state} ${client.zip}</div>
-      </div>
+      <div style="height:1px;background:#e5e7eb;margin-bottom:16px;"></div>
 
-      <table style="width:100%;border-collapse:collapse;">${lineItemsHtml}</table>
+      <table style="width:100%;border-collapse:collapse;">${tableHeaderHtml}${lineItemsHtml}</table>
 
       <table style="width:100%;border-collapse:collapse;border-top:2px solid #111827;margin-top:16px;">
         ${!isLumpSum && quote.tax_rate > 0 ? `
@@ -179,8 +210,7 @@ export async function POST(req: NextRequest) {
         </tr>
       </table>
 
-      ${quote.payment_terms ? `<p style="font-size:13px;color:#555;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">${quote.payment_terms}</p>` : ''}
-      ${quote.caveats ? `<p style="font-size:13px;color:#555;">${quote.caveats}</p>` : ''}
+      ${quote.payment_terms || quote.caveats ? `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;">${quote.payment_terms ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Payment Terms</div><p style="font-size:11px;color:#555;margin:0 0 12px;line-height:1.5;">${quote.payment_terms}</p>` : ''}${quote.caveats ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Notes</div><p style="font-size:11px;color:#555;margin:0;line-height:1.5;">${quote.caveats}</p>` : ''}</div>` : ''}
 
       ${photosHtml}
 

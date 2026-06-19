@@ -137,11 +137,6 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
         <View style={s.body}>
           <View style={s.metaRow}>
             <View style={s.metaCol}>
-              <Text style={s.metaLabel}>QUOTE</Text>
-              <Text style={s.metaName}>{q.quote_number}</Text>
-              <Text style={s.metaText}>{date}</Text>
-            </View>
-            <View style={s.metaCol}>
               <Text style={s.metaLabel}>PREPARED FOR</Text>
               <Text style={s.metaName}>{q.client.name}</Text>
               <Text style={s.metaText}>{q.client.address}</Text>
@@ -157,6 +152,11 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
               <Text style={s.metaText}>{q.contractor.phone}</Text>
               <Text style={s.metaText}>{q.contractor.email}</Text>
               {q.contractor.website ? <Text style={s.metaText}>{q.contractor.website}</Text> : null}
+            </View>
+            <View style={s.metaCol}>
+              <Text style={s.metaLabel}>QUOTE</Text>
+              <Text style={s.metaName}>{q.quote_number}</Text>
+              <Text style={s.metaText}>{date}</Text>
             </View>
           </View>
 
