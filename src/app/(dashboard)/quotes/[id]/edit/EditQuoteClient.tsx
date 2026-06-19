@@ -113,10 +113,32 @@ export function EditQuoteClient({ id }: { id: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  function addLineItem() {
-    setRows(prev => [...prev, {
+  function addItemToSection(sectionId: string | null) {
+    const newItem: QuoteRow = {
       id: crypto.randomUUID(), type: 'item' as const, description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: ''
-    }])
+    }
+    setRows(prev => {
+      if (sectionId === null) {
+        // Insert before the first section so the item stays in the unsectioned group;
+        // if there are no sections, just append.
+        const firstSectionIdx = prev.findIndex(r => r.type === 'section')
+        if (firstSectionIdx === -1) return [...prev, newItem]
+        const result = [...prev]
+        result.splice(firstSectionIdx, 0, newItem)
+        return result
+      }
+      const sectionIdx = prev.findIndex(r => r.id === sectionId)
+      if (sectionIdx === -1) return [...prev, newItem]
+      // Find the last item belonging to this section (up to the next section or end).
+      let insertAfter = sectionIdx
+      for (let i = sectionIdx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        insertAfter = i
+      }
+      const result = [...prev]
+      result.splice(insertAfter + 1, 0, newItem)
+      return result
+    })
   }
 
   function addSection() {
@@ -305,79 +327,97 @@ export function EditQuoteClient({ id }: { id: string }) {
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
             <h2 className="font-semibold text-gray-900">Line items</h2>
             {(() => {
-              let itemIndex = 0
-              return rows.map((row) => {
+              // Group the flat rows list by section so each section can have
+              // its own "+ Add line item" control that inserts at the right position.
+              type Group = { sectionRow: SectionDraft | null; items: ItemDraft[] }
+              const groups: Group[] = []
+              let current: Group = { sectionRow: null, items: [] }
+              for (const row of rows) {
                 if (row.type === 'section') {
-                  return (
-                    <div key={row.id} className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
-                      <input
-                        value={row.title}
-                        onChange={e => updateRow(row.id, 'title', e.target.value)}
-                        className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
-                        placeholder="e.g. Flood Room, Master Bathroom…"
-                      />
-                      <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-600 shrink-0">
-                        <Trash2 className="w-3.5 h-3.5" />
+                  groups.push(current)
+                  current = { sectionRow: row as SectionDraft, items: [] }
+                } else {
+                  current.items.push(row as ItemDraft)
+                }
+              }
+              groups.push(current)
+
+              let itemIndex = 0
+              return (
+                <div className="space-y-6">
+                  {groups.map(group => (
+                    <div key={group.sectionRow?.id ?? '__top__'} className="space-y-3">
+                      {group.sectionRow && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
+                          <input
+                            value={group.sectionRow.title}
+                            onChange={e => updateRow(group.sectionRow!.id, 'title', e.target.value)}
+                            className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
+                            placeholder="e.g. Flood Room, Master Bathroom…"
+                          />
+                          <button onClick={() => removeRow(group.sectionRow!.id)} className="text-red-400 hover:text-red-600 shrink-0">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      {group.items.map(li => {
+                        const idx = itemIndex++
+                        return (
+                          <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
+                              {rows.length > 1 && (
+                                <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                              placeholder="Description of work" />
+                            <div className="grid grid-cols-3 gap-2">
+                              <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
+                                <option value="fixed">Flat rate</option>
+                                <option value="sqft">Per sq ft</option>
+                                <option value="hourly">Per hour</option>
+                              </select>
+                              <input
+                                type="number"
+                                value={li.unit_price}
+                                onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                placeholder="Price"
+                                min={0} step={0.01}
+                              />
+                              {li.pricing_type !== 'fixed' && (
+                                <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                  placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
+                              )}
+                            </div>
+                            <div className="text-right text-sm font-semibold text-gray-900">
+                              {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <button
+                        onClick={() => addItemToSection(group.sectionRow?.id ?? null)}
+                        className="w-full border border-dashed border-gray-200 hover:border-[#0E6E7E] text-gray-400 hover:text-[#0E6E7E] py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add line item
                       </button>
                     </div>
-                  )
-                }
-
-                const idx = itemIndex++
-                const li = row as ItemDraft
-                return (
-                  <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
-                      {rows.length > 1 && (
-                        <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                    <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                      placeholder="Description of work" />
-                    <div className="grid grid-cols-3 gap-2">
-                      <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
-                        <option value="fixed">Flat rate</option>
-                        <option value="sqft">Per sq ft</option>
-                        <option value="hourly">Per hour</option>
-                      </select>
-                      <input
-                        type="number"
-                        value={li.unit_price}
-                        onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                        placeholder="Price"
-                        min={0} step={0.01}
-                      />
-                      {li.pricing_type !== 'fixed' && (
-                        <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                          placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
-                      )}
-                    </div>
-                    <div className="text-right text-sm font-semibold text-gray-900">
-                      {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
-                    </div>
-                  </div>
-                )
-              })
+                  ))}
+                  <button onClick={addSection}
+                    className="w-full border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" /> Add section
+                  </button>
+                </div>
+              )
             })()}
-
-            <div className="flex gap-2">
-              <button onClick={addLineItem}
-                className="flex-1 border-2 border-dashed border-gray-300 hover:border-[#0E6E7E] text-gray-500 hover:text-[#0E6E7E] py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" /> Add line item
-              </button>
-              <button onClick={addSection}
-                className="border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-500 py-3 px-4 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 whitespace-nowrap">
-                <Plus className="w-4 h-4" /> Add section
-              </button>
-            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
