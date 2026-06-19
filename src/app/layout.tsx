@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "QuoteBuilder — Handyman Quote Generator",
   description: "Professional quoting tool for handymen and contractors",
+  themeColor: "#0E6E7E",
   icons: {
     icon: [
       { url: "/favicon.ico?v=2" },
