@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
@@ -73,6 +73,11 @@ export function EditQuoteClient({ id }: { id: string }) {
   const [caveats, setCaveats] = useState('')
   const [lumpSum, setLumpSum] = useState(false)
 
+  // IDs of rows that were loaded from the DB — new rows inserted via voice or
+  // manual "add section at top" go before these, preserving speech order while
+  // staying above pre-existing content.
+  const originalRowIds = useRef<Set<string>>(new Set())
+
   // Load existing quote on mount
   useEffect(() => {
     async function load() {
@@ -108,7 +113,7 @@ export function EditQuoteClient({ id }: { id: string }) {
         .sort((a, b) => (a.sort_order as number) - (b.sort_order as number))
 
       if (rawItems.length > 0) {
-        setRows(rawItems.map(li =>
+        const loadedRows = rawItems.map(li =>
           li.item_type === 'section'
             ? { id: crypto.randomUUID(), type: 'section' as const, title: (li.description as string) || '' }
             : {
@@ -120,7 +125,9 @@ export function EditQuoteClient({ id }: { id: string }) {
                 quantity: (li.quantity as number) || 1,
                 notes: (li.notes as string) || '',
               }
-        ))
+        )
+        originalRowIds.current = new Set(loadedRows.map(r => r.id))
+        setRows(loadedRows)
       }
 
       setLoaded(true)
@@ -157,32 +164,41 @@ export function EditQuoteClient({ id }: { id: string }) {
     })
   }
 
-  function addSection() {
-    setRows(prev => [...prev, { id: crypto.randomUUID(), type: 'section' as const, title: '' }])
-  }
-
-  function wrapUnsectionedItems() {
-    // Prepend a new section header so the currently-unsectioned top items become
-    // children of it in the grouping logic — no item order changes.
+  // Shared insertion helper used by both voice suggestions and the manual
+  // "Add section at top" button. Inserts the new block (header + optional items)
+  // immediately before the first row that was loaded from the DB, so:
+  //   • successive suggestion clicks land in speech order above original content
+  //   • original sections/items are never displaced unexpectedly
+  function insertSectionBlock(title: string, items: AddLineItemPayload[]) {
+    const sectionId = crypto.randomUUID()
+    const block: QuoteRow[] = [
+      { id: sectionId, type: 'section' as const, title },
+      ...items.map(item => ({
+        id: crypto.randomUUID(),
+        type: 'item' as const,
+        description: item.description,
+        pricing_type: item.pricing_type,
+        unit_price: item.unit_price,
+        quantity: 1 as number,
+        notes: '',
+      })),
+    ]
     setRows(prev => {
-      const newSection: QuoteRow = { id: crypto.randomUUID(), type: 'section' as const, title: '' }
-      return [newSection, ...prev]
+      const firstOriginalIdx = prev.findIndex(r => originalRowIds.current.has(r.id))
+      const insertAt = firstOriginalIdx === -1 ? 0 : firstOriginalIdx
+      const result = [...prev]
+      result.splice(insertAt, 0, ...block)
+      return result
     })
   }
 
-  // Always appends as a new section (never merges into an existing one by name).
+  // Called by TemplateSuggestions when the user accepts a voice-parsed section.
   function addSectionFromSuggestion(title: string, items: AddLineItemPayload[]) {
-    const sectionId = crypto.randomUUID()
-    const newItems: QuoteRow[] = items.map(item => ({
-      id: crypto.randomUUID(),
-      type: 'item' as const,
-      description: item.description,
-      pricing_type: item.pricing_type,
-      unit_price: item.unit_price,
-      quantity: 1,
-      notes: '',
-    }))
-    setRows(prev => [...prev, { id: sectionId, type: 'section' as const, title }, ...newItems])
+    insertSectionBlock(title, items)
+  }
+
+  function addSection() {
+    setRows(prev => [...prev, { id: crypto.randomUUID(), type: 'section' as const, title: '' }])
   }
 
   function addLineItemFromSuggestion({ description, pricing_type, unit_price }: AddLineItemPayload) {
@@ -409,20 +425,19 @@ export function EditQuoteClient({ id }: { id: string }) {
               let itemIndex = 0
               return (
                 <div className="space-y-6">
-                  {groups.map((group, groupIdx) => (
+                  {/* Insert a blank section before the pre-existing content */}
+                  <button
+                    onClick={() => insertSectionBlock('', [])}
+                    className="w-full border border-dashed border-[#1A8A9C] hover:border-[#0E6E7E] text-[#0E6E7E] py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3 h-3" /> Add section at top
+                  </button>
+
+                  {groups.map((group) => (
                     <div key={group.sectionRow?.id ?? '__top__'} className="space-y-3">
-                      {/* "Add section above" — only for unsectioned top group that already has items */}
-                      {groupIdx === 0 && group.sectionRow === null && group.items.length > 0 && (
-                        <button
-                          onClick={wrapUnsectionedItems}
-                          className="w-full border border-dashed border-blue-200 hover:border-blue-400 text-blue-400 hover:text-blue-500 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5"
-                        >
-                          <Plus className="w-3 h-3" /> Add section above these items
-                        </button>
-                      )}
                       {group.sectionRow && (
-                        <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-[#EFF9FA] rounded-lg border border-[#0E6E7E]/25">
+                          <span className="text-xs font-bold text-[#0E6E7E] uppercase tracking-wide shrink-0">Section</span>
                           <input
                             value={group.sectionRow.title}
                             onChange={e => updateRow(group.sectionRow!.id, 'title', e.target.value)}
@@ -437,91 +452,96 @@ export function EditQuoteClient({ id }: { id: string }) {
                           </button>
                         </div>
                       )}
-                      {group.items.map(li => {
-                        const idx = itemIndex++
-                        return (
-                          <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
-                              {rows.length > 1 && (
-                                <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                            {/* Description + mic */}
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                value={li.description}
-                                onChange={e => updateRow(li.id, 'description', e.target.value)}
-                                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                                placeholder="Description of work"
-                              />
-                              <FieldMicButton
-                                onResult={t => updateRow(li.id, 'description', t.trim())}
-                              />
-                            </div>
-                            {/* Pricing grid — each number cell is a flex row with its own mic */}
-                            <div className="grid grid-cols-3 gap-2">
-                              <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
-                                <option value="fixed">Flat rate</option>
-                                <option value="sqft">Per sq ft</option>
-                                <option value="hourly">Per hour</option>
-                              </select>
-                              <div className="flex items-center gap-1">
+
+                      {/* Items + per-section add-button, indented under named sections */}
+                      <div className={group.sectionRow ? 'ml-3 pl-2 border-l-2 border-[#1A8A9C]/30 space-y-3' : 'space-y-3'}>
+                        {group.items.map(li => {
+                          const idx = itemIndex++
+                          return (
+                            <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3 bg-white">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
+                                {rows.length > 1 && (
+                                  <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              {/* Description + mic */}
+                              <div className="flex items-center gap-1.5">
                                 <input
-                                  type="number"
-                                  value={li.unit_price}
-                                  onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                                  onFocus={e => e.target.select()}
-                                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                                  placeholder="Price"
-                                  min={0} step={0.01}
+                                  value={li.description}
+                                  onChange={e => updateRow(li.id, 'description', e.target.value)}
+                                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                                  placeholder="Description of work"
                                 />
                                 <FieldMicButton
-                                  onResult={t => {
-                                    const n = parseFirstNumber(t)
-                                    if (n !== null) updateRow(li.id, 'unit_price', n)
-                                  }}
+                                  onResult={t => updateRow(li.id, 'description', t.trim())}
                                 />
                               </div>
-                              {li.pricing_type !== 'fixed' && (
+                              {/* Pricing grid — each number cell is a flex row with its own mic */}
+                              <div className="grid grid-cols-3 gap-2">
+                                <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
+                                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
+                                  <option value="fixed">Flat rate</option>
+                                  <option value="sqft">Per sq ft</option>
+                                  <option value="hourly">Per hour</option>
+                                </select>
                                 <div className="flex items-center gap-1">
                                   <input
                                     type="number"
-                                    value={li.quantity}
-                                    onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                    value={li.unit_price}
+                                    onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
                                     onFocus={e => e.target.select()}
                                     className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                                    placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5}
+                                    placeholder="Price"
+                                    min={0} step={0.01}
                                   />
                                   <FieldMicButton
                                     onResult={t => {
                                       const n = parseFirstNumber(t)
-                                      if (n !== null) updateRow(li.id, 'quantity', n)
+                                      if (n !== null) updateRow(li.id, 'unit_price', n)
                                     }}
                                   />
                                 </div>
-                              )}
+                                {li.pricing_type !== 'fixed' && (
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      value={li.quantity}
+                                      onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                      onFocus={e => e.target.select()}
+                                      className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                      placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5}
+                                    />
+                                    <FieldMicButton
+                                      onResult={t => {
+                                        const n = parseFirstNumber(t)
+                                        if (n !== null) updateRow(li.id, 'quantity', n)
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right text-sm font-semibold text-gray-900">
+                                {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
+                              </div>
                             </div>
-                            <div className="text-right text-sm font-semibold text-gray-900">
-                              {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
-                            </div>
-                          </div>
-                        )
-                      })}
-                      <button
-                        onClick={() => addItemToSection(group.sectionRow?.id ?? null)}
-                        className="w-full border border-dashed border-gray-200 hover:border-[#0E6E7E] text-gray-400 hover:text-[#0E6E7E] py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add line item
-                      </button>
+                          )
+                        })}
+                        <button
+                          onClick={() => addItemToSection(group.sectionRow?.id ?? null)}
+                          className="w-full border border-dashed border-gray-200 hover:border-[#0E6E7E] text-gray-400 hover:text-[#0E6E7E] py-2 rounded-lg text-sm font-medium transition flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add line item
+                        </button>
+                      </div>
                     </div>
                   ))}
+
                   <button onClick={addSection}
                     className="w-full border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
-                    <Plus className="w-4 h-4" /> Add section
+                    <Plus className="w-4 h-4" /> Add section at bottom
                   </button>
                 </div>
               )
