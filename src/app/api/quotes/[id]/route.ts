@@ -37,7 +37,7 @@ export async function PUT(
     if (contractorRow.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
-    const { client, notes, lineItems, taxRate, paymentTerms, caveats, lumpSum } = body
+    const { client, notes, lineItems, taxRate, paymentTerms, caveats, lumpSum, voiceTranscript } = body
 
     // Update client record in place
     if (client && existing.client_id) {
@@ -69,18 +69,24 @@ export async function PUT(
     const total = subtotal + taxAmount
 
     // Update quote fields
+    const quoteUpdate: Record<string, unknown> = {
+      notes: notes || null,
+      subtotal,
+      tax_rate: taxRateFraction,
+      tax_amount: taxAmount,
+      total,
+      payment_terms: paymentTerms || null,
+      caveats: caveats || null,
+      lump_sum: lumpSum === true,
+    }
+    // Only write voice_transcript when the client sends it (avoids clobbering on non-voice edits)
+    if (voiceTranscript !== undefined) {
+      quoteUpdate.voice_transcript = voiceTranscript || null
+    }
+
     const { error: quoteErr } = await admin
       .from('quotes')
-      .update({
-        notes: notes || null,
-        subtotal,
-        tax_rate: taxRateFraction,
-        tax_amount: taxAmount,
-        total,
-        payment_terms: paymentTerms || null,
-        caveats: caveats || null,
-        lump_sum: lumpSum === true,
-      })
+      .update(quoteUpdate)
       .eq('id', id)
     if (quoteErr) throw quoteErr
 

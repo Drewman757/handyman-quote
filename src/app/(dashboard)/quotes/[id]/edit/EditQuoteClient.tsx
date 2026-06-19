@@ -6,6 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
 import { Plus, Trash2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
+import { TemplateSuggestions } from '@/components/voice/TemplateSuggestions'
+import type { AddLineItemPayload } from '@/components/voice/TemplateSuggestions'
+import { FieldMicButton } from '@/components/voice/FieldMicButton'
 
 interface SectionDraft {
   id: string
@@ -28,6 +32,13 @@ type ComputedRow = SectionDraft | (ItemDraft & { total: number })
 
 const STEPS = ['Client', 'Notes', 'Pricing', 'Review']
 
+function parseFirstNumber(text: string): number | null {
+  const match = text.match(/\d+(\.\d+)?/)
+  if (!match) return null
+  const n = parseFloat(match[0])
+  return isNaN(n) ? null : n
+}
+
 export function EditQuoteClient({ id }: { id: string }) {
   const router = useRouter()
   const [loaded, setLoaded] = useState(false)
@@ -43,6 +54,10 @@ export function EditQuoteClient({ id }: { id: string }) {
   const [clientZip, setClientZip] = useState('')
   const [clientPhone, setClientPhone] = useState('')
   const [clientEmail, setClientEmail] = useState('')
+
+  // Voice — new transcript from this edit session + what was already stored
+  const [transcript, setTranscript] = useState('')
+  const [existingTranscript, setExistingTranscript] = useState('')
 
   // Notes
   const [notes, setNotes] = useState('')
@@ -83,6 +98,7 @@ export function EditQuoteClient({ id }: { id: string }) {
       setClientEmail(client.email || '')
 
       setNotes(quote.notes || '')
+      setExistingTranscript(((quote as Record<string, unknown>).voice_transcript as string) || '')
       setTaxRate(Math.round((quote.tax_rate || 0) * 1000) / 10)
       setPaymentTerms(quote.payment_terms || '')
       setCaveats(quote.caveats || '')
@@ -154,6 +170,27 @@ export function EditQuoteClient({ id }: { id: string }) {
     })
   }
 
+  // Always appends as a new section (never merges into an existing one by name).
+  function addSectionFromSuggestion(title: string, items: AddLineItemPayload[]) {
+    const sectionId = crypto.randomUUID()
+    const newItems: QuoteRow[] = items.map(item => ({
+      id: crypto.randomUUID(),
+      type: 'item' as const,
+      description: item.description,
+      pricing_type: item.pricing_type,
+      unit_price: item.unit_price,
+      quantity: 1,
+      notes: '',
+    }))
+    setRows(prev => [...prev, { id: sectionId, type: 'section' as const, title }, ...newItems])
+  }
+
+  function addLineItemFromSuggestion({ description, pricing_type, unit_price }: AddLineItemPayload) {
+    setRows(prev => [...prev, {
+      id: crypto.randomUUID(), type: 'item' as const, description, pricing_type, unit_price, quantity: 1, notes: ''
+    }])
+  }
+
   function updateRow(rowId: string, field: string, value: string | number) {
     setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r))
   }
@@ -178,6 +215,15 @@ export function EditQuoteClient({ id }: { id: string }) {
     setSaving(true)
     setError('')
     try {
+      // Concatenate new recording with any prior transcript from previous sessions.
+      // Keeps a running log without clobbering older voice notes.
+      const fresh = transcript.trim()
+      const voiceTranscript = fresh
+        ? existingTranscript
+          ? `${existingTranscript}\n[Edit ${new Date().toLocaleDateString()}]\n${fresh}`
+          : fresh
+        : existingTranscript || null
+
       const res = await fetch(`/api/quotes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -187,6 +233,7 @@ export function EditQuoteClient({ id }: { id: string }) {
             state: clientState, zip: clientZip, phone: clientPhone, email: clientEmail,
           },
           notes,
+          voiceTranscript,
           lineItems: computedRows
             .filter(row =>
               row.type === 'section'
@@ -312,9 +359,17 @@ export function EditQuoteClient({ id }: { id: string }) {
         </div>
       )}
 
-      {/* Step 1: Notes */}
+      {/* Step 1: Voice + Notes */}
       {step === 1 && (
         <div className="space-y-4">
+          <VoiceRecorder onTranscriptChange={setTranscript} />
+
+          <TemplateSuggestions
+            transcript={transcript}
+            onAddLineItem={addLineItemFromSuggestion}
+            onAddSection={addSectionFromSuggestion}
+          />
+
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <h2 className="font-semibold text-gray-900">Job notes</h2>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={6}
@@ -371,8 +426,11 @@ export function EditQuoteClient({ id }: { id: string }) {
                           <input
                             value={group.sectionRow.title}
                             onChange={e => updateRow(group.sectionRow!.id, 'title', e.target.value)}
-                            className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
+                            className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
                             placeholder="e.g. Flood Room, Master Bathroom…"
+                          />
+                          <FieldMicButton
+                            onResult={t => updateRow(group.sectionRow!.id, 'title', t.trim())}
                           />
                           <button onClick={() => removeRow(group.sectionRow!.id)} className="text-red-400 hover:text-red-600 shrink-0">
                             <Trash2 className="w-3.5 h-3.5" />
@@ -391,9 +449,19 @@ export function EditQuoteClient({ id }: { id: string }) {
                                 </button>
                               )}
                             </div>
-                            <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                              placeholder="Description of work" />
+                            {/* Description + mic */}
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                value={li.description}
+                                onChange={e => updateRow(li.id, 'description', e.target.value)}
+                                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                                placeholder="Description of work"
+                              />
+                              <FieldMicButton
+                                onResult={t => updateRow(li.id, 'description', t.trim())}
+                              />
+                            </div>
+                            {/* Pricing grid — each number cell is a flex row with its own mic */}
                             <div className="grid grid-cols-3 gap-2">
                               <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
                                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
@@ -401,20 +469,40 @@ export function EditQuoteClient({ id }: { id: string }) {
                                 <option value="sqft">Per sq ft</option>
                                 <option value="hourly">Per hour</option>
                               </select>
-                              <input
-                                type="number"
-                                value={li.unit_price}
-                                onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                                onFocus={e => e.target.select()}
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                                placeholder="Price"
-                                min={0} step={0.01}
-                              />
-                              {li.pricing_type !== 'fixed' && (
-                                <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  value={li.unit_price}
+                                  onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
                                   onFocus={e => e.target.select()}
-                                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                                  placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
+                                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                  placeholder="Price"
+                                  min={0} step={0.01}
+                                />
+                                <FieldMicButton
+                                  onResult={t => {
+                                    const n = parseFirstNumber(t)
+                                    if (n !== null) updateRow(li.id, 'unit_price', n)
+                                  }}
+                                />
+                              </div>
+                              {li.pricing_type !== 'fixed' && (
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    value={li.quantity}
+                                    onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                    onFocus={e => e.target.select()}
+                                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                    placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5}
+                                  />
+                                  <FieldMicButton
+                                    onResult={t => {
+                                      const n = parseFirstNumber(t)
+                                      if (n !== null) updateRow(li.id, 'quantity', n)
+                                    }}
+                                  />
+                                </div>
                               )}
                             </div>
                             <div className="text-right text-sm font-semibold text-gray-900">
