@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Professional quoting tool for handymen and contractors",
   icons: {
     icon: [
-      { url: "/favicon.ico" },
+      { url: "/favicon.ico?v=2" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],

@@ -194,7 +194,7 @@ export function EditQuoteClient({ id }: { id: string }) {
   if (!loaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#0E6E7E] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -212,9 +212,9 @@ export function EditQuoteClient({ id }: { id: string }) {
       <div className="flex items-center gap-2">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
-            <div className={`flex items-center gap-1.5 text-sm font-medium ${i === step ? 'text-orange-600' : i < step ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className={`flex items-center gap-1.5 text-sm font-medium ${i === step ? 'text-[#0E6E7E]' : i < step ? 'text-green-600' : 'text-gray-400'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
-                ${i === step ? 'bg-orange-500 text-white' : i < step ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                ${i === step ? 'bg-[#0E6E7E] text-white' : i < step ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
                 {i < step ? '✓' : i + 1}
               </div>
               <span className="hidden sm:block">{s}</span>
@@ -232,50 +232,50 @@ export function EditQuoteClient({ id }: { id: string }) {
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Full name *</label>
               <input value={clientName} onChange={e => setClientName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 placeholder="Jane Smith" />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
               <input value={clientAddress} onChange={e => setClientAddress(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 placeholder="123 Main St" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
               <input value={clientCity} onChange={e => setClientCity(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 placeholder="Naples" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                 <input value={clientState} onChange={e => setClientState(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                   placeholder="FL" maxLength={2} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
                 <input value={clientZip} onChange={e => setClientZip(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                   placeholder="34102" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
               <input value={clientPhone} onChange={e => setClientPhone(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 placeholder="(555) 000-0000" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 placeholder="jane@example.com" />
             </div>
           </div>
           <button onClick={() => setStep(1)} disabled={!clientName}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
+            className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-60 flex items-center justify-center gap-2">
             Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -287,12 +287,12 @@ export function EditQuoteClient({ id }: { id: string }) {
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-3">
             <h2 className="font-semibold text-gray-900">Job notes</h2>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 resize-none"
               placeholder="Describe the work to be done…" />
           </div>
           <div className="flex gap-3">
             <button onClick={() => setStep(0)} className="flex-1 border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
-            <button onClick={() => setStep(2)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <button onClick={() => setStep(2)} className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
               Continue <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -337,11 +337,11 @@ export function EditQuoteClient({ id }: { id: string }) {
                       )}
                     </div>
                     <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder:text-gray-400"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
                       placeholder="Description of work" />
                     <div className="grid grid-cols-3 gap-2">
                       <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900">
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
                         <option value="fixed">Flat rate</option>
                         <option value="sqft">Per sq ft</option>
                         <option value="hourly">Per hour</option>
@@ -350,13 +350,13 @@ export function EditQuoteClient({ id }: { id: string }) {
                         type="number"
                         value={li.unit_price}
                         onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                         placeholder="Price"
                         min={0} step={0.01}
                       />
                       {li.pricing_type !== 'fixed' && (
                         <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                           placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
                       )}
                     </div>
@@ -370,7 +370,7 @@ export function EditQuoteClient({ id }: { id: string }) {
 
             <div className="flex gap-2">
               <button onClick={addLineItem}
-                className="flex-1 border-2 border-dashed border-gray-300 hover:border-orange-400 text-gray-500 hover:text-orange-500 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                className="flex-1 border-2 border-dashed border-gray-300 hover:border-[#0E6E7E] text-gray-500 hover:text-[#0E6E7E] py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
                 <Plus className="w-4 h-4" /> Add line item
               </button>
               <button onClick={addSection}
@@ -385,18 +385,18 @@ export function EditQuoteClient({ id }: { id: string }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tax rate (%)</label>
               <input type="number" value={taxRate} onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 min={0} max={100} step={0.1} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Payment terms</label>
               <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none" />
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Caveats / notes to client</label>
               <textarea value={caveats} onChange={e => setCaveats(e.target.value)} rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none"
                 placeholder="e.g. Price subject to change if additional issues found…" />
             </div>
             <div className="flex items-center justify-between pt-1">
@@ -407,7 +407,7 @@ export function EditQuoteClient({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={() => setLumpSum(prev => !prev)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${lumpSum ? 'bg-orange-500' : 'bg-gray-200'}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${lumpSum ? 'bg-[#0E6E7E]' : 'bg-gray-200'}`}
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${lumpSum ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
@@ -416,7 +416,7 @@ export function EditQuoteClient({ id }: { id: string }) {
 
           <div className="flex gap-3">
             <button onClick={() => setStep(1)} className="flex-1 border border-gray-300 text-gray-700 font-medium py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
-            <button onClick={() => setStep(3)} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
+            <button onClick={() => setStep(3)} className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
               Review <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -495,7 +495,7 @@ export function EditQuoteClient({ id }: { id: string }) {
           <div className="flex gap-3">
             <button onClick={() => setStep(2)} className="border border-gray-300 text-gray-700 font-medium px-4 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
+              className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>

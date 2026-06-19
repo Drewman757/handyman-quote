@@ -85,7 +85,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                     <p className="font-medium text-gray-900 leading-snug">{c.business_name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{c.owner_name}</p>
                     {c.is_admin && (
-                      <span className="inline-block text-[10px] font-bold text-orange-600 uppercase tracking-wide mt-0.5">
+                      <span className="inline-block text-[10px] font-bold text-[#0E6E7E] uppercase tracking-wide mt-0.5">
                         Admin
                       </span>
                     )}

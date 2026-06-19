@@ -29,7 +29,6 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
   const client = quote.client as Record<string, string>
   const contractor = quote.contractor as Record<string, string | null> | null
   const lineItems = (quote.line_items as Record<string, unknown>[]) || []
-  const brandColor = contractor?.brand_color || '#f97316'
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -48,7 +47,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
       {/* Contractor branding — shown only when a logo is uploaded */}
       {contractor?.logo_url && (
         <div
-          style={{ backgroundColor: brandColor + '18', borderColor: brandColor + '40' }}
+          style={{ backgroundColor: '#0E6E7E18', borderColor: '#0E6E7E40' }}
           className="rounded-xl border px-5 py-3 flex items-center gap-3"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -57,7 +56,7 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             alt={contractor.business_name ?? ''}
             className="h-10 w-auto object-contain max-w-[160px]"
           />
-          <span style={{ color: brandColor }} className="text-sm font-medium">{contractor.business_name}</span>
+          <span style={{ color: '#0E6E7E' }} className="text-sm font-medium">{contractor.business_name}</span>
         </div>
       )}
 

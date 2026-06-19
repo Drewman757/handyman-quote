@@ -63,7 +63,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-gray-500 mt-0.5">{contractor?.business_name}</p>
         </div>
         <Link href="/quotes/new"
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition">
+          className="flex items-center gap-2 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium px-4 py-2.5 rounded-xl text-sm transition">
           <Plus className="w-4 h-4" />
           New quote
         </Link>
@@ -91,13 +91,13 @@ export default async function DashboardPage() {
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">Recent quotes</h2>
-          <Link href="/quotes" className="text-sm text-orange-600 hover:underline">View all</Link>
+          <Link href="/quotes" className="text-sm text-[#0E6E7E] hover:underline">View all</Link>
         </div>
         {!recentQuotes?.length ? (
           <div className="px-5 py-10 text-center">
             <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No quotes yet.</p>
-            <Link href="/quotes/new" className="text-sm text-orange-600 hover:underline mt-1 inline-block">
+            <Link href="/quotes/new" className="text-sm text-[#0E6E7E] hover:underline mt-1 inline-block">
               Create your first quote
             </Link>
           </div>

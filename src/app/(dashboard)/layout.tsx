@@ -22,7 +22,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
-  const [brandColor, setBrandColor] = useState('#f97316')
 
   useEffect(() => {
     async function loadContractor() {
@@ -30,12 +29,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!user) return
       const { data } = await supabase
         .from('contractors')
-        .select('is_admin, logo_url, brand_color')
+        .select('is_admin, logo_url')
         .eq('user_id', user.id)
         .single()
       if (data?.is_admin) setIsAdmin(true)
       if (data?.logo_url) setLogoUrl(data.logo_url)
-      if (data?.brand_color) setBrandColor(data.brand_color)
     }
     loadContractor()
   }, [])
@@ -46,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" data-brand style={{ '--brand-color': brandColor } as React.CSSProperties}>
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-60 bg-white border-r border-gray-200 flex flex-col transform transition-transform duration-200
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex`}>
@@ -72,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             return (
               <Link key={href} href={href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
-                  ${active ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                  ${active ? 'bg-[#EFF9FA] text-[#0E6E7E]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                 onClick={() => setMobileOpen(false)}>
                 <Icon className="w-4 h-4" />
                 {label}
@@ -86,7 +84,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link
               href="/admin"
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition
-                ${pathname.startsWith('/admin') ? 'bg-orange-50 text-orange-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                ${pathname.startsWith('/admin') ? 'bg-[#EFF9FA] text-[#0E6E7E]' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
               onClick={() => setMobileOpen(false)}
             >
               <Shield className="w-4 h-4" />

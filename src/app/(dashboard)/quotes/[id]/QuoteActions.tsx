@@ -73,7 +73,7 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
       </a>
       {(status === 'draft' || status === 'sent') && clientEmail && (
         <button onClick={sendEmail} disabled={loading === 'email'}
-          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50">
+          className="flex items-center gap-1.5 bg-[#0E6E7E] hover:bg-[#0A5560] text-white text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50">
           <Send className="w-3.5 h-3.5" />
           {loading === 'email' ? 'Sending…' : 'Email quote'}
         </button>

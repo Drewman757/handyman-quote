@@ -51,7 +51,7 @@ export default function UpdatePasswordPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           {!ready ? (
             <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[#0E6E7E] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <>
@@ -63,7 +63,7 @@ export default function UpdatePasswordPage() {
                     type="password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] focus:border-transparent"
                     placeholder="Min 6 characters"
                     autoComplete="new-password"
                     minLength={6}
@@ -76,7 +76,7 @@ export default function UpdatePasswordPage() {
                     type="password"
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] focus:border-transparent"
                     placeholder="Re-enter password"
                     autoComplete="new-password"
                     minLength={6}
@@ -87,7 +87,7 @@ export default function UpdatePasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
+                  className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
                 >
                   {loading ? 'Saving…' : 'Set password & continue'}
                 </button>

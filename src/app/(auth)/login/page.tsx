@@ -47,7 +47,7 @@ function LoginForm() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] focus:border-transparent"
                 placeholder="you@example.com"
                 autoComplete="email"
                 required
@@ -59,14 +59,14 @@ function LoginForm() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] focus:border-transparent"
                 placeholder="••••••••"
                 autoComplete="current-password"
                 required
               />
             </div>
             <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-orange-600 hover:underline">
+              <Link href="/forgot-password" className="text-xs text-[#0E6E7E] hover:underline">
                 Forgot password?
               </Link>
             </div>
@@ -74,7 +74,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
+              className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
             >
               {loading ? 'Signing in…' : 'Sign in'}
             </button>

@@ -69,7 +69,7 @@ export default function RequestAccessPage() {
                 type="text"
                 required
                 placeholder="John Smith"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -79,7 +79,7 @@ export default function RequestAccessPage() {
                 type="text"
                 required
                 placeholder="Smith Handyman Services"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -89,7 +89,7 @@ export default function RequestAccessPage() {
                 type="email"
                 required
                 placeholder="john@example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -102,7 +102,7 @@ export default function RequestAccessPage() {
                 placeholder="Min 6 characters"
                 autoComplete="new-password"
                 minLength={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -115,7 +115,7 @@ export default function RequestAccessPage() {
                 placeholder="Re-enter password"
                 autoComplete="new-password"
                 minLength={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -125,7 +125,7 @@ export default function RequestAccessPage() {
                 type="tel"
                 required
                 placeholder="(555) 000-0000"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
               />
             </div>
             <div>
@@ -137,14 +137,14 @@ export default function RequestAccessPage() {
                 required
                 rows={3}
                 placeholder="What kind of work do you do? How many quotes do you send per month?"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] resize-none"
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
+              className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50"
             >
               {loading ? 'Redirecting to checkout…' : 'Continue to payment →'}
             </button>

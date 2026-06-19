@@ -26,7 +26,7 @@ export default async function QuotesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Quotes</h1>
         <Link href="/quotes/new"
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition">
+          className="flex items-center gap-2 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium px-4 py-2.5 rounded-xl text-sm transition">
           <Plus className="w-4 h-4" />New quote
         </Link>
       </div>
@@ -36,7 +36,7 @@ export default async function QuotesPage() {
           <div className="py-16 text-center">
             <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">No quotes yet</p>
-            <Link href="/quotes/new" className="text-sm text-orange-600 hover:underline mt-1 inline-block">
+            <Link href="/quotes/new" className="text-sm text-[#0E6E7E] hover:underline mt-1 inline-block">
               Create your first quote →
             </Link>
           </div>

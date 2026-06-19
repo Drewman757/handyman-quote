@@ -92,7 +92,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => logoInputRef.current?.click()}
               disabled={logoUploading}
-              className="block text-sm font-medium text-orange-600 hover:text-orange-700 disabled:opacity-50 transition"
+              className="block text-sm font-medium text-[#0E6E7E] hover:text-[#0A5560] disabled:opacity-50 transition"
             >
               {logoUploading ? 'Uploading…' : logoUrl ? 'Change logo' : 'Upload logo'}
             </button>
@@ -134,28 +134,28 @@ export default function SettingsPage() {
           <div key={key}>
             <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
             <input value={form[key as keyof typeof form]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900" />
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900" />
           </div>
         ))}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Default payment terms</label>
           <textarea value={form.default_payment_terms} onChange={e => setForm(f => ({ ...f, default_payment_terms: e.target.value }))}
-            rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900" />
+            rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] resize-none text-gray-900" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Default caveats</label>
           <textarea value={form.default_caveats} onChange={e => setForm(f => ({ ...f, default_caveats: e.target.value }))}
-            rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
+            rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] resize-none text-gray-900"
             placeholder="Standard notes added to every quote…" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Financing options</label>
           <textarea value={form.financing_options} onChange={e => setForm(f => ({ ...f, financing_options: e.target.value }))}
-            rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-gray-900"
+            rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] resize-none text-gray-900"
             placeholder="e.g. 0% financing available through GreenSky…" />
         </div>
         <button type="submit" disabled={saving}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
+          className="w-full bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
           {saved ? '✓ Saved!' : saving ? 'Saving…' : 'Save changes'}
         </button>
       </form>

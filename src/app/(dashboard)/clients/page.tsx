@@ -32,7 +32,7 @@ export default async function ClientsPage() {
                   className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition group"
                 >
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-orange-600 transition">{c.name}</p>
+                    <p className="font-medium text-gray-900 group-hover:text-[#0E6E7E] transition">{c.name}</p>
                     <p className="text-sm text-gray-500">{c.address}, {c.city} · {c.email}</p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -42,7 +42,7 @@ export default async function ClientsPage() {
                         {quoteCount === 1 ? '1 quote' : `${quoteCount} quotes`}
                       </p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition" />
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#0E6E7E] transition" />
                   </div>
                 </Link>
               )

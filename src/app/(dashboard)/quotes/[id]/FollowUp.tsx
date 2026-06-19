@@ -42,7 +42,7 @@ export function FollowUp({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Bell className="w-4 h-4 text-orange-500" />
+        <Bell className="w-4 h-4 text-[#0E6E7E]" />
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Follow-up</h2>
       </div>
 
@@ -53,7 +53,7 @@ export function FollowUp({
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E]"
           />
         </div>
         <button
@@ -74,7 +74,7 @@ export function FollowUp({
           <button
             onClick={sendFollowUp}
             disabled={sending}
-            className="flex items-center gap-2 mt-1 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
+            className="flex items-center gap-2 mt-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white text-sm font-medium px-4 py-2 rounded-lg transition disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             {sending ? 'Sending…' : 'Send follow-up email'}

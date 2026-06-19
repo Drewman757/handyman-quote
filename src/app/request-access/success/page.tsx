@@ -16,7 +16,7 @@ export default function RequestAccessSuccessPage() {
         </p>
         <p className="text-gray-400 text-xs mt-6">
           Questions?{' '}
-          <Link href="mailto:Lineagelabsllc@gmail.com" className="text-orange-500 hover:underline">
+          <Link href="mailto:Lineagelabsllc@gmail.com" className="text-[#0E6E7E] hover:underline">
             Lineagelabsllc@gmail.com
           </Link>
         </p>

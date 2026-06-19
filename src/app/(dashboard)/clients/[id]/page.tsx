@@ -51,7 +51,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         </div>
         <Link
           href="/quotes/new"
-          className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition"
+          className="flex items-center gap-1.5 bg-[#0E6E7E] hover:bg-[#0A5560] text-white text-sm font-medium px-3 py-2 rounded-lg transition"
         >
           <Plus className="w-3.5 h-3.5" /> New quote
         </Link>
@@ -106,7 +106,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
           <div className="py-12 text-center">
             <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No quotes yet for this client.</p>
-            <Link href="/quotes/new" className="text-sm text-orange-600 hover:underline mt-1 inline-block">
+            <Link href="/quotes/new" className="text-sm text-[#0E6E7E] hover:underline mt-1 inline-block">
               Create the first quote →
             </Link>
           </div>
@@ -120,7 +120,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               >
                 <div className="flex items-center gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition">
+                    <p className="text-sm font-semibold text-gray-900 group-hover:text-[#0E6E7E] transition">
                       {q.quote_number}
                     </p>
                     <p className="text-xs text-gray-400">
