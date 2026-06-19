@@ -122,9 +122,9 @@ export default function RegisterPage() {
                 <p className="text-xs text-gray-600 leading-relaxed">
                   By signing up, you agree that Lineage Labs LLC may access, store, and use the information you enter into
                   QuoteBuilder — including quote, job, and business data — to operate, maintain, support, and improve
-                  QuoteBuilder and Lineage Labs&rsquo; other products and services, including improving our AI features. You
-                  retain ownership of your business data. You&rsquo;re responsible for having the right to enter any
-                  client/customer information you input. We don&rsquo;t sell your data to third parties.
+                  QuoteBuilder, including improving our AI features. You retain ownership of your business data. You&rsquo;re
+                  responsible for having the right to enter any client/customer information you input. We don&rsquo;t sell your
+                  data to third parties.
                 </p>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input

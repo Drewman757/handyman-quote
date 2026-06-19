@@ -73,10 +73,6 @@ export default function PrivacyPage() {
                 To train, tune, or evaluate AI features used to generate quotes, sections, or recommendations within
                 QuoteBuilder;
               </li>
-              <li>
-                To develop and improve other Lineage Labs products and services, using de-identified or aggregated data only
-                (i.e., data that no longer identifies you or your clients);
-              </li>
               <li>To detect and prevent fraud or abuse.</li>
             </ul>
           </section>
@@ -85,9 +81,8 @@ export default function PrivacyPage() {
             <h2 className="text-base font-bold text-gray-900">3. AI Features</h2>
             <p>
               QuoteBuilder uses AI to help generate quote content, suggestions, and recommendations. Your data — including job
-              descriptions and pricing — may be used to train, tune, or evaluate these AI features. We use de-identified or
-              aggregated data when using your information to improve models for general use. We do not share your identifiable
-              data with third-party AI providers for their own independent model training.
+              descriptions and pricing — may be used to train, tune, or evaluate these AI features within QuoteBuilder. We do
+              not share your identifiable data with third-party AI providers for their own independent model training.
             </p>
           </section>
 

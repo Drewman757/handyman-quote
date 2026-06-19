@@ -69,11 +69,7 @@ export default function TermsPage() {
                   <li>Provide customer support and troubleshoot issues;</li>
                   <li>
                     Improve QuoteBuilder, including training, tuning, or evaluating AI features used to generate quotes,
-                    sections, or recommendations;
-                  </li>
-                  <li>
-                    Develop and improve other Lineage Labs LLC products and services, using de-identified or aggregated data only
-                    (i.e., data that has had names, contact details, and other directly identifying information removed).
+                    sections, or recommendations.
                   </li>
                 </ul>
               </div>
@@ -90,15 +86,6 @@ export default function TermsPage() {
               <div>
                 <p className="font-semibold text-gray-900 mb-1">No sale of data</p>
                 <p>We do not sell Your Data to third parties.</p>
-              </div>
-
-              <div>
-                <p className="font-semibold text-gray-900 mb-1">Aggregated/de-identified data</p>
-                <p>
-                  We may use data that has been aggregated or stripped of identifying information for purposes such as market
-                  reports, benchmarking, or other Lineage Labs products (e.g., SWFL Market Intelligence), without restriction,
-                  since this data no longer identifies you or your clients.
-                </p>
               </div>
 
               <div>
