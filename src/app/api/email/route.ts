@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
           <tr>
             <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
               <div style="font-size:14px;color:#111827;">${sanitizeText(li.description as string)}</div>
-              ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#9ca3af;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
+              ${li.pricing_type !== 'fixed' ? `<div style="font-size:12px;color:#666;">${li.quantity} ${getUnitLabel(li.pricing_type as 'sqft' | 'hourly')} × ${formatCurrency(li.unit_price as number)}</div>` : ''}
             </td>
             <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827;">
               ${formatCurrency(li.total as number)}
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
     // ── Photo thumbnail grid (signed URLs — viewable in email clients) ────────
     const photosHtml = photos.length > 0 ? `
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;">
-        <p style="font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.08em;margin:0 0 12px;text-transform:uppercase;">
+        <p style="font-size:11px;font-weight:700;color:#666;letter-spacing:0.08em;margin:0 0 12px;text-transform:uppercase;">
           Job Photos (${photos.length})
         </p>
         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -132,19 +132,20 @@ export async function POST(req: NextRequest) {
 <html>
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-    ${contractor.logo_url ? `<div style="text-align:center;padding:20px 24px 0;background:#fff;"><img src="${contractor.logo_url}" alt="${contractor.business_name}" height="64" style="max-height:64px;max-width:200px;object-fit:contain;display:inline-block;" /></div>` : ''}
-    <div style="background:${contractor.brand_color || '#00BFFF'};padding:24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:20px;">${contractor.business_name}</h1>
-      <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:14px;">Project Quote</p>
-      ${contractor.license_number ? `<p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:12px;">License #${contractor.license_number}</p>` : ''}
-      ${contractor.insurance_number ? `<p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:12px;">Insurance #${contractor.insurance_number}</p>` : ''}
+    <div style="background:#fff;padding:24px 24px 16px;text-align:center;">
+      ${contractor.logo_url ? `<img src="${contractor.logo_url}" alt="${contractor.business_name}" height="64" style="max-height:64px;max-width:200px;object-fit:contain;display:inline-block;margin-bottom:12px;" />` : ''}
+      <h1 style="color:#1a1a1a;margin:0 0 6px;font-size:20px;font-weight:700;">${contractor.business_name}</h1>
+      <p style="color:#444;margin:0 0 2px;font-size:13px;">${contractor.phone} · ${contractor.email}</p>
+      ${contractor.license_number ? `<p style="color:#444;margin:0 0 2px;font-size:12px;">License #${contractor.license_number}</p>` : ''}
+      ${contractor.insurance_number ? `<p style="color:#444;margin:0 0 0;font-size:12px;">Insurance #${contractor.insurance_number}</p>` : ''}
     </div>
+    <div style="height:4px;background:${contractor.brand_color || '#0E6E7E'};"></div>
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${client.name},</p>
-      <p style="color:#6b7280;font-size:14px;line-height:1.6;">Thank you for the opportunity. Please find your project quote below.</p>
+      <p style="color:#555;font-size:14px;line-height:1.6;">Thank you for the opportunity. Please find your project quote below.</p>
 
       <div style="background:#f9fafb;border-radius:8px;padding:16px;margin:20px 0;">
-        <div style="font-size:12px;color:#9ca3af;margin-bottom:4px;">QUOTE ${quote.quote_number}</div>
+        <div style="font-size:12px;color:#666;margin-bottom:4px;">QUOTE ${quote.quote_number}</div>
         <div style="font-size:13px;color:#374151;">${client.address}, ${client.city}, ${client.state} ${client.zip}</div>
       </div>
 
@@ -153,12 +154,12 @@ export async function POST(req: NextRequest) {
       <table style="width:100%;border-collapse:collapse;border-top:2px solid #111827;margin-top:16px;">
         ${!isLumpSum && quote.tax_rate > 0 ? `
         <tr>
-          <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;">Subtotal</td>
-          <td style="padding:8px 0 4px;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.subtotal)}</td>
+          <td style="padding:8px 0 4px;font-size:14px;color:#555;">Subtotal</td>
+          <td style="padding:8px 0 4px;font-size:14px;color:#555;text-align:right;">${formatCurrency(quote.subtotal)}</td>
         </tr>
         <tr>
-          <td style="padding:4px 0;font-size:14px;color:#6b7280;">Tax (${(quote.tax_rate * 100).toFixed(1)}%)</td>
-          <td style="padding:4px 0;font-size:14px;color:#6b7280;text-align:right;">${formatCurrency(quote.tax_amount)}</td>
+          <td style="padding:4px 0;font-size:14px;color:#555;">Tax (${(quote.tax_rate * 100).toFixed(1)}%)</td>
+          <td style="padding:4px 0;font-size:14px;color:#555;text-align:right;">${formatCurrency(quote.tax_amount)}</td>
         </tr>` : ''}
         <tr>
           <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;">Total</td>
@@ -166,12 +167,12 @@ export async function POST(req: NextRequest) {
         </tr>
       </table>
 
-      ${quote.payment_terms ? `<p style="font-size:13px;color:#6b7280;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">${quote.payment_terms}</p>` : ''}
-      ${quote.caveats ? `<p style="font-size:13px;color:#6b7280;">${quote.caveats}</p>` : ''}
+      ${quote.payment_terms ? `<p style="font-size:13px;color:#555;margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6;">${quote.payment_terms}</p>` : ''}
+      ${quote.caveats ? `<p style="font-size:13px;color:#555;">${quote.caveats}</p>` : ''}
 
       ${photosHtml}
 
-      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#9ca3af;">
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#666;">
         <p style="margin:0;">${contractor.business_name}</p>
         <p style="margin:4px 0 0;">${contractor.phone} · ${contractor.email}</p>
       </div>
