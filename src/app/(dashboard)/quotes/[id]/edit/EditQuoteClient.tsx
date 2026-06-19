@@ -145,6 +145,15 @@ export function EditQuoteClient({ id }: { id: string }) {
     setRows(prev => [...prev, { id: crypto.randomUUID(), type: 'section' as const, title: '' }])
   }
 
+  function wrapUnsectionedItems() {
+    // Prepend a new section header so the currently-unsectioned top items become
+    // children of it in the grouping logic — no item order changes.
+    setRows(prev => {
+      const newSection: QuoteRow = { id: crypto.randomUUID(), type: 'section' as const, title: '' }
+      return [newSection, ...prev]
+    })
+  }
+
   function updateRow(rowId: string, field: string, value: string | number) {
     setRows(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r))
   }
@@ -345,8 +354,17 @@ export function EditQuoteClient({ id }: { id: string }) {
               let itemIndex = 0
               return (
                 <div className="space-y-6">
-                  {groups.map(group => (
+                  {groups.map((group, groupIdx) => (
                     <div key={group.sectionRow?.id ?? '__top__'} className="space-y-3">
+                      {/* "Add section above" — only for unsectioned top group that already has items */}
+                      {groupIdx === 0 && group.sectionRow === null && group.items.length > 0 && (
+                        <button
+                          onClick={wrapUnsectionedItems}
+                          className="w-full border border-dashed border-blue-200 hover:border-blue-400 text-blue-400 hover:text-blue-500 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-3 h-3" /> Add section above these items
+                        </button>
+                      )}
                       {group.sectionRow && (
                         <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
@@ -387,12 +405,14 @@ export function EditQuoteClient({ id }: { id: string }) {
                                 type="number"
                                 value={li.unit_price}
                                 onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                onFocus={e => e.target.select()}
                                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                                 placeholder="Price"
                                 min={0} step={0.01}
                               />
                               {li.pricing_type !== 'fixed' && (
                                 <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                  onFocus={e => e.target.select()}
                                   className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                                   placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
                               )}
@@ -425,6 +445,7 @@ export function EditQuoteClient({ id }: { id: string }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tax rate (%)</label>
               <input type="number" value={taxRate} onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
+                onFocus={e => e.target.select()}
                 className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
                 min={0} max={100} step={0.1} />
             </div>
@@ -475,33 +496,37 @@ export function EditQuoteClient({ id }: { id: string }) {
             </div>
 
             <div className="border-t border-gray-100 pt-4 space-y-2">
-              {computedRows
-                .filter(row =>
-                  row.type === 'section'
-                    ? (row as SectionDraft).title.trim()
-                    : (row as ItemDraft).description.trim()
-                )
-                .map(row => {
-                  if (row.type === 'section') {
+              {(() => {
+                let inSection = false
+                return computedRows
+                  .filter(row =>
+                    row.type === 'section'
+                      ? (row as SectionDraft).title.trim()
+                      : (row as ItemDraft).description.trim()
+                  )
+                  .map(row => {
+                    if (row.type === 'section') {
+                      inSection = true
+                      return (
+                        <div key={row.id} className="pt-1.5 pb-0.5">
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{(row as SectionDraft).title}</p>
+                        </div>
+                      )
+                    }
+                    const li = row as ItemDraft & { total: number }
                     return (
-                      <div key={row.id} className="pt-1.5 pb-0.5">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{(row as SectionDraft).title}</p>
+                      <div key={li.id} className={`flex justify-between text-sm${inSection ? ' pl-3' : ''}`}>
+                        <span className="text-gray-700">
+                          {li.description}
+                          {li.pricing_type !== 'fixed' && (
+                            <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>
+                          )}
+                        </span>
+                        {!lumpSum && <span className="font-medium text-gray-900">{formatCurrency(li.total)}</span>}
                       </div>
                     )
-                  }
-                  const li = row as ItemDraft & { total: number }
-                  return (
-                    <div key={li.id} className="flex justify-between text-sm">
-                      <span className="text-gray-700">
-                        {li.description}
-                        {li.pricing_type !== 'fixed' && (
-                          <span className="text-gray-400"> ({li.quantity} {getUnitLabel(li.pricing_type)})</span>
-                        )}
-                      </span>
-                      {!lumpSum && <span className="font-medium text-gray-900">{formatCurrency(li.total)}</span>}
-                    </div>
-                  )
-                })}
+                  })
+              })()}
               {lumpSum && (
                 <p className="text-xs text-gray-400 italic mt-1">Prices hidden — client sees descriptions and total only</p>
               )}
