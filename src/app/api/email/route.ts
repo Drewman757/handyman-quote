@@ -170,21 +170,21 @@ export async function POST(req: NextRequest) {
     </div>
     <div style="height:4px;background:${contractor.brand_color || '#0E6E7E'};"></div>
     <div style="padding:24px;">
-      <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:20px;">
+      <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-bottom:20px;table-layout:fixed;">
         <tr>
-          <td style="vertical-align:top;padding-right:16px;">
+          <td width="38%" style="vertical-align:top;padding-right:12px;word-wrap:break-word;overflow-wrap:break-word;">
             <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Prepared For</div>
-            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${client.name}</div>
-            <div style="font-size:11px;color:#4b5563;line-height:1.6;">${client.address}<br>${client.city}, ${client.state} ${client.zip}<br>${client.phone}<br>${client.email}</div>
+            <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:2px;">${client.name}</div>
+            <div style="font-size:11px;color:#4b5563;line-height:1.5;">${client.address}<br>${client.city}, ${client.state} ${client.zip}<br>${client.phone}<br>${client.email}</div>
           </td>
-          <td style="vertical-align:top;padding-right:16px;">
+          <td width="32%" style="vertical-align:top;padding-right:12px;word-wrap:break-word;overflow-wrap:break-word;">
             <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">From</div>
-            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${contractor.business_name}</div>
-            <div style="font-size:11px;color:#4b5563;line-height:1.6;">${contractor.owner_name ? contractor.owner_name + '<br>' : ''}${contractor.address ? contractor.address + '<br>' : ''}${contractor.phone}<br>${contractor.email}${contractor.website ? '<br>' + contractor.website : ''}</div>
+            <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:2px;">${contractor.business_name}</div>
+            <div style="font-size:11px;color:#4b5563;line-height:1.5;">${contractor.owner_name ? contractor.owner_name + '<br>' : ''}${contractor.address ? contractor.address + '<br>' : ''}${contractor.phone}<br>${contractor.email}${contractor.website ? '<br>' + contractor.website : ''}</div>
           </td>
-          <td style="vertical-align:top;">
+          <td width="30%" style="vertical-align:top;word-wrap:break-word;overflow-wrap:break-word;">
             <div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Quote</div>
-            <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">${quote.quote_number}</div>
+            <div style="font-size:12px;font-weight:700;color:#111827;margin-bottom:2px;">${quote.quote_number}</div>
             <div style="font-size:11px;color:#4b5563;">${quoteDate}</div>
           </td>
         </tr>
