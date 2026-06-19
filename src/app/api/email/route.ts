@@ -1,3 +1,5 @@
+import fs from 'fs'
+import path from 'path'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
@@ -5,6 +7,16 @@ import { createClient as createAdmin } from '@supabase/supabase-js'
 import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+function readLineageLogo(): Buffer | null {
+  try {
+    return fs.readFileSync(path.join(process.cwd(), 'public', 'lineage-labs-logo.jpg'))
+  } catch {
+    return null
+  }
+}
+const lineageLogoBuf = readLineageLogo()
+const LINEAGE_LOGO_CID = 'lineage-labs-logo@ll'
 
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -176,6 +188,15 @@ export async function POST(req: NextRequest) {
         <p style="margin:0;">${contractor.business_name}</p>
         <p style="margin:4px 0 0;">${contractor.phone} · ${contractor.email}</p>
       </div>
+
+      <table cellpadding="0" cellspacing="0" border="0" style="width:100%;margin-top:16px;padding-top:16px;border-top:1px solid #f3f4f6;">
+        <tr>
+          <td style="text-align:center;vertical-align:middle;">
+            ${lineageLogoBuf ? `<img src="cid:${LINEAGE_LOGO_CID}" width="20" height="20" style="display:inline-block;vertical-align:middle;margin-right:6px;" alt="" />` : ''}
+            <span style="font-size:11px;color:#888;vertical-align:middle;">Quote generation powered by Lineage Labs LLC</span>
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
 </body>
@@ -187,10 +208,10 @@ export async function POST(req: NextRequest) {
       to: client.email,
       subject: `Your quote from ${contractor.business_name} — ${formatCurrency(quote.total)}`,
       html,
-      attachments: photos.map(p => ({
-        filename: p.filename,
-        content: p.content,
-      })),
+      attachments: [
+        ...photos.map(p => ({ filename: p.filename, content: p.content })),
+        ...(lineageLogoBuf ? [{ filename: 'lineage-labs-logo.jpg', content: lineageLogoBuf, contentId: LINEAGE_LOGO_CID }] : []),
+      ],
     })
 
     return NextResponse.json({ success: true })

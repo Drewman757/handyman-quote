@@ -250,7 +250,7 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
             {lineageLogoSrc ? (
               <Image src={lineageLogoSrc} style={s.lineageLogo} />
             ) : null}
-            <Text style={s.footerText}>Powered by Lineage Labs, LLC</Text>
+            <Text style={s.footerText}>Quote generation powered by Lineage Labs LLC</Text>
           </View>
 
           <Text style={s.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
