@@ -7,6 +7,7 @@ import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 30
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,12 +16,12 @@ const supabaseAdmin = createClient(
 )
 
 // Register Open Sans so ligature glyphs (fl, fi, ff, etc.) render correctly.
-// Helvetica's built-in ligature substitution drops characters like "fl" entirely.
+// Fonts are bundled locally (public/fonts/) to avoid outbound HTTP fetches at render time.
 Font.register({
   family: 'Open Sans',
   fonts: [
-    { src: 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0C11.ttf' },
-    { src: 'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjd0C11.ttf', fontWeight: 700 },
+    { src: `data:font/truetype;base64,${fs.readFileSync(path.join(process.cwd(), 'public', 'fonts', 'OpenSans-Regular.ttf')).toString('base64')}` },
+    { src: `data:font/truetype;base64,${fs.readFileSync(path.join(process.cwd(), 'public', 'fonts', 'OpenSans-Bold.ttf')).toString('base64')}`, fontWeight: 700 },
   ],
 })
 
