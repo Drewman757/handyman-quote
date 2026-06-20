@@ -87,21 +87,19 @@ export function useVoiceRecorder(options?: { onDebugLog?: (msg: string) => void 
       const snapshot = Array.from(event.results as any[]).map((r: any, i: number) => `[${i}:${r.isFinal ? 'F' : 'I'}]"${r[0].transcript}"`)
       log(`[SR] onresult inst#${instanceId} t=${Date.now()} resultIndex=${event.resultIndex} results.length=${event.results.length} | ${snapshot.join(' ')}`)
       if (recognitionRef.current !== recognition) { log(`[SR] onresult inst#${instanceId} STALE — ignored`); return } // stale instance — ignore late events
-      // Scan ALL results in event.results from index 0 on every call.
-      // We intentionally ignore event.resultIndex because mobile Chrome unreliably reports
-      // resultIndex=0 on subsequent events within the same session, which caused the old
-      // (prev) => prev + final accumulation to re-prepend all prior finals on each new word.
-      // Instead we rebuild the complete current-instance transcript fresh each time and SET it.
+      // On mobile Chrome each results[i].transcript is the FULL cumulative phrase
+      // up to that point, not an isolated word — summing across indices compounds
+      // every prior phrase into quadratic repetition. Take only the LAST final entry
+      // (it already contains everything finalized so far for this instance) and
+      // collect any trailing non-final result as the live interim preview.
       let instanceFinal = ''
       let interim = ''
+      let lastFinalIdx = -1
       for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i]
-        if (result.isFinal) {
-          instanceFinal += result[0].transcript + ' '
-        } else {
-          interim += result[0].transcript
-        }
+        if (event.results[i].isFinal) lastFinalIdx = i
+        else interim += event.results[i][0].transcript
       }
+      if (lastFinalIdx >= 0) instanceFinal = event.results[lastFinalIdx][0].transcript + ' '
       currentInstanceFinalRef.current = instanceFinal
       // SET (not +=): full transcript = completed prior instances + this instance's finals
       setTranscript(priorTranscriptRef.current + instanceFinal)
