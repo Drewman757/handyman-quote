@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel, parseFirstNumber } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
-import { Plus, Trash2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Plus, Trash2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown } from 'lucide-react'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
 import { TemplateSuggestions } from '@/components/voice/TemplateSuggestions'
 import type { AddLineItemPayload } from '@/components/voice/TemplateSuggestions'
@@ -206,6 +206,72 @@ export function EditQuoteClient({ id }: { id: string }) {
 
   function removeRow(rowId: string) {
     setRows(prev => prev.filter(r => r.id !== rowId))
+  }
+
+  function moveSectionUp(sectionId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === sectionId)
+      if (idx === -1) return prev
+      let blockEnd = idx
+      for (let i = idx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        blockEnd = i
+      }
+      let prevSectionIdx = -1
+      for (let i = idx - 1; i >= 0; i--) {
+        if (prev[i].type === 'section') { prevSectionIdx = i; break }
+      }
+      if (prevSectionIdx === -1) return prev
+      const block = prev.slice(idx, blockEnd + 1)
+      const result = [...prev]
+      result.splice(idx, block.length)
+      result.splice(prevSectionIdx, 0, ...block)
+      return result
+    })
+  }
+
+  function moveSectionDown(sectionId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === sectionId)
+      if (idx === -1) return prev
+      let blockEnd = idx
+      for (let i = idx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        blockEnd = i
+      }
+      const nextSectionIdx = blockEnd + 1
+      if (nextSectionIdx >= prev.length || prev[nextSectionIdx].type !== 'section') return prev
+      let nextBlockEnd = nextSectionIdx
+      for (let i = nextSectionIdx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        nextBlockEnd = i
+      }
+      const before = prev.slice(0, idx)
+      const currentBlock = prev.slice(idx, blockEnd + 1)
+      const nextBlock = prev.slice(nextSectionIdx, nextBlockEnd + 1)
+      const after = prev.slice(nextBlockEnd + 1)
+      return [...before, ...nextBlock, ...currentBlock, ...after]
+    })
+  }
+
+  function moveItemUp(itemId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === itemId)
+      if (idx <= 0 || prev[idx - 1].type === 'section') return prev
+      const result = [...prev]
+      ;[result[idx - 1], result[idx]] = [result[idx], result[idx - 1]]
+      return result
+    })
+  }
+
+  function moveItemDown(itemId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === itemId)
+      if (idx === -1 || idx >= prev.length - 1 || prev[idx + 1].type === 'section') return prev
+      const result = [...prev]
+      ;[result[idx], result[idx + 1]] = [result[idx + 1], result[idx]]
+      return result
+    })
   }
 
   const computedRows: ComputedRow[] = rows.map(row =>
@@ -414,6 +480,9 @@ export function EditQuoteClient({ id }: { id: string }) {
                 }
               }
               groups.push(current)
+              const namedGroups = groups.filter(g => g.sectionRow !== null)
+              const firstSectionId = namedGroups[0]?.sectionRow?.id
+              const lastSectionId = namedGroups[namedGroups.length - 1]?.sectionRow?.id
 
               let itemIndex = 0
               return (
@@ -440,6 +509,24 @@ export function EditQuoteClient({ id }: { id: string }) {
                           <FieldMicButton
                             onResult={t => updateRow(group.sectionRow!.id, 'title', t.trim())}
                           />
+                          <div className="flex flex-col shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => moveSectionUp(group.sectionRow!.id)}
+                              disabled={group.sectionRow!.id === firstSectionId}
+                              className="flex items-center justify-center w-6 h-4 text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveSectionDown(group.sectionRow!.id)}
+                              disabled={group.sectionRow!.id === lastSectionId}
+                              className="flex items-center justify-center w-6 h-4 text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                          </div>
                           <button onClick={() => removeRow(group.sectionRow!.id)} className="text-red-400 hover:text-red-600 shrink-0">
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -450,15 +537,35 @@ export function EditQuoteClient({ id }: { id: string }) {
                       <div className={group.sectionRow ? 'ml-3 pl-2 border-l-2 border-[#1A8A9C]/30 space-y-3' : 'space-y-3'}>
                         {group.items.map(li => {
                           const idx = itemIndex++
+                          const isFirstItem = group.items.indexOf(li) === 0
+                          const isLastItem = group.items.indexOf(li) === group.items.length - 1
                           return (
                             <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3 bg-white">
                               <div className="flex items-center justify-between">
                                 <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
-                                {rows.length > 1 && (
-                                  <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveItemUp(li.id)}
+                                    disabled={isFirstItem}
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                                  >
+                                    <ChevronUp className="w-3.5 h-3.5" />
                                   </button>
-                                )}
+                                  <button
+                                    type="button"
+                                    onClick={() => moveItemDown(li.id)}
+                                    disabled={isLastItem}
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                                  >
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  </button>
+                                  {rows.length > 1 && (
+                                    <button onClick={() => removeRow(li.id)} className="flex items-center justify-center w-7 h-7 rounded text-red-400 hover:text-red-600">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               {/* Description + mic */}
                               <div className="flex items-center gap-1.5">
