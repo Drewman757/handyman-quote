@@ -545,21 +545,47 @@ export function EditQuoteClient({ id }: { id: string }) {
             <h2 className="font-semibold text-gray-900">Quote settings</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tax rate (%)</label>
-              <input type="number" value={taxRate} onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
-                onFocus={e => e.target.select()}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
-                min={0} max={100} step={0.1} />
+              <div className="flex items-center gap-1.5">
+                <input type="number" value={taxRate} onChange={e => setTaxRate(parseFloat(e.target.value) || 0)}
+                  onFocus={e => e.target.select()}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                  min={0} max={100} step={0.1} />
+                <FieldMicButton
+                  onResult={t => {
+                    const n = parseFirstNumber(t)
+                    if (n !== null) setTaxRate(n)
+                  }}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Payment terms</label>
-              <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none" />
+              <div className="flex items-start gap-1.5">
+                <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none" />
+                <FieldMicButton
+                  onResult={t => setPaymentTerms(prev => {
+                    const s = t.trim()
+                    if (!prev) return s
+                    return prev + (/[\s.!?,;:]$/.test(prev) ? '' : ' ') + s
+                  })}
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Caveats / notes to client</label>
-              <textarea value={caveats} onChange={e => setCaveats(e.target.value)} rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none"
-                placeholder="e.g. Price subject to change if additional issues found…" />
+              <div className="flex items-start gap-1.5">
+                <textarea value={caveats} onChange={e => setCaveats(e.target.value)} rows={3}
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none"
+                  placeholder="e.g. Price subject to change if additional issues found…" />
+                <FieldMicButton
+                  onResult={t => setCaveats(prev => {
+                    const s = t.trim()
+                    if (!prev) return s
+                    return prev + (/[\s.!?,;:]$/.test(prev) ? '' : ' ') + s
+                  })}
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between pt-1">
               <div>
