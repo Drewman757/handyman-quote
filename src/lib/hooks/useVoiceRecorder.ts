@@ -99,8 +99,10 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setInterimTranscript('')
 
       if (shouldRestartRef.current && recognitionRef.current === recognition) {
-        // Mobile auto-stop on silence: restart with a FRESH instance so event.results
-        // resets cleanly and prior-session results can't duplicate into the new session.
+        // Retire this instance immediately so any late onresult (firing after onend but
+        // during the 150 ms restart gap) is rejected by the guard — not when the new
+        // instance is assigned 150 ms from now.
+        recognitionRef.current = null
         setTimeout(() => {
           if (shouldRestartRef.current) {
             try {
@@ -112,7 +114,6 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
             }
           } else if (stopPendingRef.current) {
             // stopRecording was called during the 150 ms restart window — finalize now
-            recognitionRef.current = null
             stopPendingRef.current = false
             setState('done')
           }
