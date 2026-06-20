@@ -8,7 +8,7 @@ import { TemplateSuggestions } from '@/components/voice/TemplateSuggestions'
 import type { AddLineItemPayload } from '@/components/voice/TemplateSuggestions'
 import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel, parseFirstNumber } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
-import { Plus, Trash2, ChevronRight, ChevronLeft, Camera, X, ImageIcon } from 'lucide-react'
+import { Plus, Trash2, ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Camera, X, ImageIcon } from 'lucide-react'
 import { FieldMicButton } from '@/components/voice/FieldMicButton'
 
 interface SectionDraft {
@@ -211,6 +211,92 @@ export default function NewQuotePage() {
 
   function removeRow(id: string) {
     setRows(prev => prev.filter(row => row.id !== id))
+  }
+
+  function addSectionAtTop() {
+    setRows(prev => [{ id: crypto.randomUUID(), type: 'section' as const, title: '' }, ...prev])
+  }
+
+  function addItemToSection(sectionId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === sectionId)
+      if (idx === -1) return prev
+      let insertAt = idx + 1
+      for (let i = idx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        insertAt = i + 1
+      }
+      const newItem: ItemDraft = { id: crypto.randomUUID(), type: 'item', description: '', pricing_type: 'fixed', unit_price: 0, quantity: 1, notes: '' }
+      const result = [...prev]
+      result.splice(insertAt, 0, newItem)
+      return result
+    })
+  }
+
+  function moveSectionUp(sectionId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === sectionId)
+      if (idx === -1) return prev
+      let blockEnd = idx
+      for (let i = idx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        blockEnd = i
+      }
+      let prevSectionIdx = -1
+      for (let i = idx - 1; i >= 0; i--) {
+        if (prev[i].type === 'section') { prevSectionIdx = i; break }
+      }
+      if (prevSectionIdx === -1) return prev
+      const block = prev.slice(idx, blockEnd + 1)
+      const result = [...prev]
+      result.splice(idx, block.length)
+      result.splice(prevSectionIdx, 0, ...block)
+      return result
+    })
+  }
+
+  function moveSectionDown(sectionId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === sectionId)
+      if (idx === -1) return prev
+      let blockEnd = idx
+      for (let i = idx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        blockEnd = i
+      }
+      const nextSectionIdx = blockEnd + 1
+      if (nextSectionIdx >= prev.length || prev[nextSectionIdx].type !== 'section') return prev
+      let nextBlockEnd = nextSectionIdx
+      for (let i = nextSectionIdx + 1; i < prev.length; i++) {
+        if (prev[i].type === 'section') break
+        nextBlockEnd = i
+      }
+      const before = prev.slice(0, idx)
+      const currentBlock = prev.slice(idx, blockEnd + 1)
+      const nextBlock = prev.slice(nextSectionIdx, nextBlockEnd + 1)
+      const after = prev.slice(nextBlockEnd + 1)
+      return [...before, ...nextBlock, ...currentBlock, ...after]
+    })
+  }
+
+  function moveItemUp(itemId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === itemId)
+      if (idx <= 0 || prev[idx - 1].type === 'section') return prev
+      const result = [...prev]
+      ;[result[idx - 1], result[idx]] = [result[idx], result[idx - 1]]
+      return result
+    })
+  }
+
+  function moveItemDown(itemId: string) {
+    setRows(prev => {
+      const idx = prev.findIndex(r => r.id === itemId)
+      if (idx === -1 || idx >= prev.length - 1 || prev[idx + 1].type === 'section') return prev
+      const result = [...prev]
+      ;[result[idx], result[idx + 1]] = [result[idx + 1], result[idx]]
+      return result
+    })
   }
 
   const computedRows: ComputedRow[] = rows.map(row =>
@@ -501,89 +587,150 @@ export default function NewQuotePage() {
                 return row?.type === 'item' && (row as ItemDraft).unit_price === 0
               }) ?? null
 
-              let itemIndex = 0
-              return rows.map((row) => {
+              type Group = { sectionRow: SectionDraft | null; items: ItemDraft[] }
+              const groups: Group[] = []
+              let current: Group = { sectionRow: null, items: [] }
+              for (const row of rows) {
                 if (row.type === 'section') {
-                  return (
-                    <div key={row.id} className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide shrink-0">Section</span>
-                      <input
-                        value={row.title}
-                        onChange={e => updateRow(row.id, 'title', e.target.value)}
-                        className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
-                        placeholder="e.g. Flood Room, Master Bathroom…"
-                      />
-                      <FieldMicButton fieldType="section_title" onResult={t => updateRow(row.id, 'title', t.trim())} />
-                      <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-600 shrink-0">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )
+                  groups.push(current)
+                  current = { sectionRow: row as SectionDraft, items: [] }
+                } else {
+                  current.items.push(row as ItemDraft)
                 }
+              }
+              groups.push(current)
 
-                const idx = itemIndex++
-                const li = row as ItemDraft
-                return (
-                  <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
-                      {rows.length > 1 && (
-                        <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                        placeholder="Description of work" />
-                      <FieldMicButton fieldType="description" onResult={t => updateRow(li.id, 'description', t.trim())} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
-                        <option value="fixed">Flat rate</option>
-                        <option value="sqft">Per sq ft</option>
-                        <option value="hourly">Per hour</option>
-                      </select>
-                      {(() => {
-                        const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
-                        return (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="number"
-                              ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
-                              value={li.unit_price}
-                              onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                              className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
-                                needsPrice
-                                  ? 'border-[#0E6E7E] bg-[#EFF9FA] focus:ring-[#0E6E7E]'
-                                  : 'border-gray-300 focus:ring-[#0E6E7E]'
-                              }`}
-                              placeholder={needsPrice ? 'Enter price' : 'Price'}
-                              min={0} step={0.01}
-                            />
-                            <FieldMicButton
-                              onResult={t => {
-                                const n = parseFirstNumber(t)
-                                if (n !== null) updateRow(li.id, 'unit_price', n)
-                              }}
-                            />
+              const namedGroups = groups.filter(g => g.sectionRow !== null)
+              const firstSectionId = namedGroups[0]?.sectionRow?.id
+              const lastSectionId = namedGroups[namedGroups.length - 1]?.sectionRow?.id
+
+              let itemIndex = 0
+              return (
+                <div className="space-y-6">
+                  {namedGroups.length > 0 && (
+                    <button onClick={addSectionAtTop}
+                      className="w-full border-2 border-dashed border-gray-300 hover:border-[#0E6E7E] text-gray-500 hover:text-[#0E6E7E] py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                      <Plus className="w-4 h-4" /> Add section at top
+                    </button>
+                  )}
+                  {groups.map((group) => (
+                    <div key={group.sectionRow?.id ?? '__top__'} className="space-y-3">
+                      {group.sectionRow && (
+                        <div className="flex items-center gap-2 px-3 py-2.5 bg-[#EFF9FA] rounded-lg border border-[#0E6E7E]/25">
+                          <span className="text-xs font-bold text-[#0E6E7E] uppercase tracking-wide shrink-0">Section</span>
+                          <input
+                            value={group.sectionRow.title}
+                            onChange={e => updateRow(group.sectionRow!.id, 'title', e.target.value)}
+                            className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
+                            placeholder="e.g. Flood Room, Master Bathroom…"
+                          />
+                          <FieldMicButton fieldType="section_title" onResult={t => updateRow(group.sectionRow!.id, 'title', t.trim())} />
+                          <div className="flex flex-col shrink-0">
+                            <button
+                              onClick={() => moveSectionUp(group.sectionRow!.id)}
+                              disabled={group.sectionRow!.id === firstSectionId}
+                              className="flex items-center justify-center w-6 h-4 text-gray-400 hover:text-gray-600 disabled:opacity-25 transition">
+                              <ChevronUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => moveSectionDown(group.sectionRow!.id)}
+                              disabled={group.sectionRow!.id === lastSectionId}
+                              className="flex items-center justify-center w-6 h-4 text-gray-400 hover:text-gray-600 disabled:opacity-25 transition">
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
                           </div>
-                        )
-                      })()}
-                      {li.pricing_type !== 'fixed' && (
-                        <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                          placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
+                          <button onClick={() => removeRow(group.sectionRow!.id)} className="text-red-400 hover:text-red-600 shrink-0">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
+                      <div className={group.sectionRow ? 'ml-3 pl-2 border-l-2 border-[#1A8A9C]/30 space-y-3' : 'space-y-3'}>
+                        {group.items.map(li => {
+                          const idx = itemIndex++
+                          const isFirstItem = group.items.indexOf(li) === 0
+                          const isLastItem = group.items.indexOf(li) === group.items.length - 1
+                          const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
+                          return (
+                            <div key={li.id} className="p-4 border border-gray-200 rounded-lg space-y-3 bg-white">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-400">Item {idx + 1}</span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => moveItemUp(li.id)}
+                                    disabled={isFirstItem}
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-40 transition">
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => moveItemDown(li.id)}
+                                    disabled={isLastItem}
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-40 transition">
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  </button>
+                                  {rows.length > 1 && (
+                                    <button onClick={() => removeRow(li.id)} className="text-red-400 hover:text-red-600 flex items-center justify-center w-7 h-7">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
+                                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                                  placeholder="Description of work" />
+                                <FieldMicButton fieldType="description" onResult={t => updateRow(li.id, 'description', t.trim())} />
+                              </div>
+                              <div className="grid grid-cols-3 gap-2">
+                                <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
+                                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
+                                  <option value="fixed">Flat rate</option>
+                                  <option value="sqft">Per sq ft</option>
+                                  <option value="hourly">Per hour</option>
+                                </select>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
+                                    value={li.unit_price}
+                                    onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                                    className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
+                                      needsPrice
+                                        ? 'border-[#0E6E7E] bg-[#EFF9FA] focus:ring-[#0E6E7E]'
+                                        : 'border-gray-300 focus:ring-[#0E6E7E]'
+                                    }`}
+                                    placeholder={needsPrice ? 'Enter price' : 'Price'}
+                                    min={0} step={0.01}
+                                  />
+                                  <FieldMicButton
+                                    onResult={t => {
+                                      const n = parseFirstNumber(t)
+                                      if (n !== null) updateRow(li.id, 'unit_price', n)
+                                    }}
+                                  />
+                                </div>
+                                {li.pricing_type !== 'fixed' && (
+                                  <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                                    placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
+                                )}
+                              </div>
+                              <div className="text-right text-sm font-semibold text-gray-900">
+                                {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
+                              </div>
+                            </div>
+                          )
+                        })}
+                        {group.sectionRow && (
+                          <button onClick={() => addItemToSection(group.sectionRow!.id)}
+                            className="w-full border-2 border-dashed border-gray-300 hover:border-[#0E6E7E] text-gray-500 hover:text-[#0E6E7E] py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+                            <Plus className="w-4 h-4" /> Add line item
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right text-sm font-semibold text-gray-900">
-                      {formatCurrency(calculateLineItemTotal(li.pricing_type, li.unit_price, li.quantity))}
-                    </div>
-                  </div>
-                )
-              })
+                  ))}
+                </div>
+              )
             })()}
 
             <div className="flex gap-2">
@@ -593,7 +740,7 @@ export default function NewQuotePage() {
               </button>
               <button onClick={addSection}
                 className="border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-500 hover:text-blue-500 py-3 px-4 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 whitespace-nowrap">
-                <Plus className="w-4 h-4" /> Add section
+                <Plus className="w-4 h-4" /> Add section at bottom
               </button>
             </div>
           </div>
