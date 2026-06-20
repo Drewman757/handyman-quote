@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
+import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel, parseFirstNumber } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
 import { Plus, Trash2, ChevronRight, ChevronLeft } from 'lucide-react'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
@@ -31,13 +31,6 @@ type QuoteRow = SectionDraft | ItemDraft
 type ComputedRow = SectionDraft | (ItemDraft & { total: number })
 
 const STEPS = ['Client', 'Notes', 'Pricing', 'Review']
-
-function parseFirstNumber(text: string): number | null {
-  const match = text.match(/\d+(\.\d+)?/)
-  if (!match) return null
-  const n = parseFloat(match[0])
-  return isNaN(n) ? null : n
-}
 
 export function EditQuoteClient({ id }: { id: string }) {
   const router = useRouter()

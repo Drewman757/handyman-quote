@@ -57,6 +57,15 @@ export function getUnitLabel(type: PricingType, custom?: string): string {
   }
 }
 
+/** Extracts the first numeric value from a voice transcript string.
+ *  Returns null if no digits are found — callers should silently no-op. */
+export function parseFirstNumber(text: string): number | null {
+  const match = text.match(/\d+(\.\d+)?/)
+  if (!match) return null
+  const n = parseFloat(match[0])
+  return isNaN(n) ? null : n
+}
+
 /**
  * Heuristic: if a line item's win rate is below 40%, flag pricing as high.
  * Below 20%, flag as very high.

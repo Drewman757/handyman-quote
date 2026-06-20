@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase/client'
 import { VoiceRecorder } from '@/components/voice/VoiceRecorder'
 import { TemplateSuggestions } from '@/components/voice/TemplateSuggestions'
 import type { AddLineItemPayload } from '@/components/voice/TemplateSuggestions'
-import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
+import { calculateLineItemTotal, calculateQuoteTotals, formatCurrency, getUnitLabel, parseFirstNumber } from '@/lib/utils/pricing'
 import type { PricingType } from '@/lib/types'
 import { Plus, Trash2, ChevronRight, ChevronLeft, Camera, X, ImageIcon } from 'lucide-react'
+import { FieldMicButton } from '@/components/voice/FieldMicButton'
 
 interface SectionDraft {
   id: string
@@ -524,9 +525,12 @@ export default function NewQuotePage() {
                         </button>
                       )}
                     </div>
-                    <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
-                      placeholder="Description of work" />
+                    <div className="flex items-center gap-1.5">
+                      <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
+                        className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                        placeholder="Description of work" />
+                      <FieldMicButton onResult={t => updateRow(li.id, 'description', t.trim())} />
+                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900">
@@ -537,19 +541,27 @@ export default function NewQuotePage() {
                       {(() => {
                         const needsPrice = suggestedItemIds.has(li.id) && li.unit_price === 0
                         return (
-                          <input
-                            type="number"
-                            ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
-                            value={li.unit_price}
-                            onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                            className={`px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
-                              needsPrice
-                                ? 'border-[#0E6E7E] bg-[#EFF9FA] focus:ring-[#0E6E7E]'
-                                : 'border-gray-300 focus:ring-[#0E6E7E]'
-                            }`}
-                            placeholder={needsPrice ? 'Enter price' : 'Price'}
-                            min={0} step={0.01}
-                          />
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
+                              value={li.unit_price}
+                              onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
+                              className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
+                                needsPrice
+                                  ? 'border-[#0E6E7E] bg-[#EFF9FA] focus:ring-[#0E6E7E]'
+                                  : 'border-gray-300 focus:ring-[#0E6E7E]'
+                              }`}
+                              placeholder={needsPrice ? 'Enter price' : 'Price'}
+                              min={0} step={0.01}
+                            />
+                            <FieldMicButton
+                              onResult={t => {
+                                const n = parseFirstNumber(t)
+                                if (n !== null) updateRow(li.id, 'unit_price', n)
+                              }}
+                            />
+                          </div>
                         )
                       })()}
                       {li.pricing_type !== 'fixed' && (
