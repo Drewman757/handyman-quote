@@ -97,7 +97,7 @@ type LI = { id: string; description: string; pricing_type: string; unit_price: n
 type QuoteDoc = {
   quote_number: string; created_at: string
   subtotal: number; tax_rate: number; tax_amount: number; total: number
-  payment_terms: string | null; caveats: string | null
+  payment_terms: string | null; caveats: string | null; financing_options: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
   lump_sum: boolean
   contractor: { business_name: string; owner_name: string; phone: string; email: string; license_number: string | null; logo_url: string | null; address: string | null; website: string | null; insurance_number: string | null; brand_color: string | null }
@@ -230,7 +230,7 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
             </View>
           </View>
 
-          {q.payment_terms || q.caveats ? (
+          {q.payment_terms || q.caveats || q.financing_options ? (
             <View style={s.terms}>
               {q.payment_terms ? (
                 <>
@@ -242,6 +242,12 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
                 <View style={{ marginTop: q.payment_terms ? 10 : 0 }}>
                   <Text style={s.termsTitle}>NOTES</Text>
                   <Text style={s.termsBody}>{q.caveats}</Text>
+                </View>
+              ) : null}
+              {q.financing_options ? (
+                <View style={{ marginTop: q.payment_terms || q.caveats ? 10 : 0 }}>
+                  <Text style={s.termsTitle}>FINANCING OPTIONS</Text>
+                  <Text style={s.termsBody}>{q.financing_options}</Text>
                 </View>
               ) : null}
             </View>

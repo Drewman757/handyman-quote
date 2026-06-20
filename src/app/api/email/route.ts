@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
         </tr>
       </table>
 
-      ${quote.payment_terms || quote.caveats ? `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;">${quote.payment_terms ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Payment Terms</div><p style="font-size:11px;color:#555;margin:0 0 12px;line-height:1.5;">${quote.payment_terms}</p>` : ''}${quote.caveats ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Notes</div><p style="font-size:11px;color:#555;margin:0;line-height:1.5;">${quote.caveats}</p>` : ''}</div>` : ''}
+      ${quote.payment_terms || quote.caveats || quote.financing_options ? `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e5e7eb;">${quote.payment_terms ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Payment Terms</div><p style="font-size:11px;color:#555;margin:0 0 12px;line-height:1.5;">${quote.payment_terms}</p>` : ''}${quote.caveats ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Notes</div><p style="font-size:11px;color:#555;margin:0 0 12px;line-height:1.5;">${quote.caveats}</p>` : ''}${quote.financing_options ? `<div style="font-size:10px;font-weight:700;color:#666;letter-spacing:0.08em;margin-bottom:5px;text-transform:uppercase;">Financing Options</div><p style="font-size:11px;color:#555;margin:0;line-height:1.5;">${quote.financing_options}</p>` : ''}</div>` : ''}
 
       ${photosHtml}
 

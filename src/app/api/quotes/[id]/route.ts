@@ -37,7 +37,7 @@ export async function PUT(
     if (contractorRow.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
-    const { client, notes, lineItems, taxRate, paymentTerms, caveats, lumpSum, voiceTranscript } = body
+    const { client, notes, lineItems, taxRate, paymentTerms, caveats, financingOptions, lumpSum, voiceTranscript } = body
 
     // Update client record in place
     if (client && existing.client_id) {
@@ -77,6 +77,7 @@ export async function PUT(
       total,
       payment_terms: paymentTerms || null,
       caveats: caveats || null,
+      financing_options: financingOptions || null,
       lump_sum: lumpSum === true,
     }
     // Only write voice_transcript when the client sends it (avoids clobbering on non-voice edits)

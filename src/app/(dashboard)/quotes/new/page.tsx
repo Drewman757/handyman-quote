@@ -69,13 +69,14 @@ export default function NewQuotePage() {
       if (!user) return
       const { data: contractor } = await supabase
         .from('contractors')
-        .select('id, logo_url, default_payment_terms, default_caveats')
+        .select('id, logo_url, default_payment_terms, default_caveats, financing_options')
         .eq('user_id', user.id)
         .single()
       if (!contractor) return
       if (contractor.logo_url) setContractorLogoUrl(contractor.logo_url)
       if (contractor.default_payment_terms) setPaymentTerms(contractor.default_payment_terms)
       if (contractor.default_caveats) setCaveats(contractor.default_caveats)
+      if (contractor.financing_options) setFinancingOptions(contractor.financing_options)
       const { data: clients } = await supabase
         .from('clients')
         .select('id, name, address, city, state, zip, phone, email')
@@ -123,6 +124,7 @@ export default function NewQuotePage() {
   const [taxRate, setTaxRate] = useState(0)
   const [paymentTerms, setPaymentTerms] = useState('Payment due upon completion.')
   const [caveats, setCaveats] = useState('')
+  const [financingOptions, setFinancingOptions] = useState('')
   const [lumpSum, setLumpSum] = useState(false)
 
   const onTranscriptChange = useCallback((t: string) => {
@@ -270,6 +272,7 @@ export default function NewQuotePage() {
           taxRate,
           paymentTerms,
           caveats,
+          financingOptions,
           lumpSum,
           photoUrls,
           send: sendNow,
@@ -633,6 +636,21 @@ export default function NewQuotePage() {
                   placeholder="e.g. Price subject to change if additional issues found…" />
                 <FieldMicButton
                   onResult={t => setCaveats(prev => {
+                    const s = t.trim()
+                    if (!prev) return s
+                    return prev + (/\s$/.test(prev) ? '' : ' ') + s
+                  })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Financing options</label>
+              <div className="flex items-start gap-1.5">
+                <textarea value={financingOptions} onChange={e => setFinancingOptions(e.target.value)} rows={3}
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 resize-none"
+                  placeholder="e.g. 0% financing available for 12 months…" />
+                <FieldMicButton
+                  onResult={t => setFinancingOptions(prev => {
                     const s = t.trim()
                     if (!prev) return s
                     return prev + (/\s$/.test(prev) ? '' : ' ') + s
