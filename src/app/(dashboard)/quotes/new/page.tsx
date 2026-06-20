@@ -69,11 +69,13 @@ export default function NewQuotePage() {
       if (!user) return
       const { data: contractor } = await supabase
         .from('contractors')
-        .select('id, logo_url')
+        .select('id, logo_url, default_payment_terms, default_caveats')
         .eq('user_id', user.id)
         .single()
       if (!contractor) return
       if (contractor.logo_url) setContractorLogoUrl(contractor.logo_url)
+      if (contractor.default_payment_terms) setPaymentTerms(contractor.default_payment_terms)
+      if (contractor.default_caveats) setCaveats(contractor.default_caveats)
       const { data: clients } = await supabase
         .from('clients')
         .select('id, name, address, city, state, zip, phone, email')
