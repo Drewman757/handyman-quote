@@ -127,6 +127,28 @@ export default function NewQuotePage() {
   const [financingOptions, setFinancingOptions] = useState('')
   const [lumpSum, setLumpSum] = useState(false)
 
+  // Debug overlay — active only when ?debug=1 is in the URL
+  const [debugMode, setDebugMode] = useState(false)
+  const [debugLines, setDebugLines] = useState<string[]>([])
+  const debugOverlayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setDebugMode(new URLSearchParams(window.location.search).get('debug') === '1')
+  }, [])
+
+  useEffect(() => {
+    if (debugOverlayRef.current) {
+      debugOverlayRef.current.scrollTop = debugOverlayRef.current.scrollHeight
+    }
+  }, [debugLines])
+
+  const addDebugLine = useCallback((msg: string) => {
+    setDebugLines(prev => {
+      const next = [...prev, msg]
+      return next.length > 200 ? next.slice(-200) : next
+    })
+  }, [])
+
   const onTranscriptChange = useCallback((t: string) => {
     setTranscript(t)
     if (t && !notes) setNotes(t)
@@ -485,7 +507,7 @@ export default function NewQuotePage() {
       {/* Step 1: Voice / notes / photos */}
       {step === 1 && (
         <div className="space-y-4">
-          <VoiceRecorder onTranscriptChange={onTranscriptChange} />
+          <VoiceRecorder onTranscriptChange={onTranscriptChange} onDebugLog={debugMode ? addDebugLine : undefined} />
 
           <TemplateSuggestions
             transcript={transcript}
@@ -969,6 +991,48 @@ export default function NewQuotePage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Debug overlay — visible only with ?debug=1 */}
+      {debugMode && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          height: '33vh', zIndex: 9999,
+          background: 'rgba(0,0,0,0.88)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '4px 8px', borderBottom: '1px solid rgba(255,255,255,0.2)', flexShrink: 0,
+          }}>
+            <span style={{ color: '#aaa', fontFamily: 'monospace', fontSize: 10 }}>
+              SR Debug · {debugLines.length} lines
+            </span>
+            <button
+              onClick={() => navigator.clipboard.writeText(debugLines.join('\n'))}
+              style={{
+                color: '#4af', fontFamily: 'monospace', fontSize: 10,
+                background: 'none', border: '1px solid #4af',
+                borderRadius: 3, padding: '2px 8px', cursor: 'pointer',
+              }}
+            >
+              Copy logs
+            </button>
+          </div>
+          <div
+            ref={debugOverlayRef}
+            style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}
+          >
+            {debugLines.map((line, i) => (
+              <div key={i} style={{
+                color: '#fff', fontFamily: 'monospace', fontSize: 10,
+                lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+              }}>
+                {line}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

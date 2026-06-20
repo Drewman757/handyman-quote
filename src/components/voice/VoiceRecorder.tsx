@@ -8,9 +8,10 @@ import { useEffect } from 'react'
 interface VoiceRecorderProps {
   onTranscriptChange: (transcript: string) => void
   className?: string
+  onDebugLog?: (msg: string) => void
 }
 
-export function VoiceRecorder({ onTranscriptChange, className }: VoiceRecorderProps) {
+export function VoiceRecorder({ onTranscriptChange, className, onDebugLog }: VoiceRecorderProps) {
   const {
     state,
     transcript,
@@ -23,7 +24,7 @@ export function VoiceRecorder({ onTranscriptChange, className }: VoiceRecorderPr
     resumeRecording,
     resetRecording,
     isSupported,
-  } = useVoiceRecorder()
+  } = useVoiceRecorder({ onDebugLog })
 
   useEffect(() => {
     onTranscriptChange(transcript)
