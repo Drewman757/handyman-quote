@@ -69,6 +69,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
+      if (recognitionRef.current !== recognition) return // stale instance — ignore late events
       let final = ''
       let interim = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -85,6 +86,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onerror = (event: any) => {
+      if (recognitionRef.current !== recognition) return // stale instance — ignore late errors
       if (event.error === 'no-speech') return
       setError(`Voice recognition error: ${event.error}`)
       setState('error')
