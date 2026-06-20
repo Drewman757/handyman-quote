@@ -32,6 +32,11 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const accumulatedRef = useRef<number>(0)
   // Controls mobile auto-restart: mobile Chrome stops continuous recognition on silence
   const shouldRestartRef = useRef(false)
+  // Set true by stopRecording so onend knows to transition to 'done' (not restart)
+  const stopPendingRef = useRef(false)
+  // Holds the createRecognition factory so onend can spawn a fresh instance on restart
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createRecognitionRef = useRef<(() => any) | null>(null)
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -84,28 +89,45 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setError(`Voice recognition error: ${event.error}`)
       setState('error')
       shouldRestartRef.current = false
+      stopPendingRef.current = false
       clearTimer()
     }
 
     recognition.onend = () => {
       setInterimTranscript('')
-      // Mobile browsers (Chrome/Safari) stop continuous recognition on silence —
-      // restart automatically if we're still supposed to be recording.
+
       if (shouldRestartRef.current && recognitionRef.current === recognition) {
+        // Mobile auto-stop on silence: restart with a FRESH instance so event.results
+        // resets cleanly and prior-session results can't duplicate into the new session.
         setTimeout(() => {
-          if (shouldRestartRef.current && recognitionRef.current === recognition) {
+          if (shouldRestartRef.current) {
             try {
-              recognition.start()
+              const next = createRecognitionRef.current!()
+              recognitionRef.current = next
+              next.start()
             } catch {
               // Already started or aborted — ignore
             }
+          } else if (stopPendingRef.current) {
+            // stopRecording was called during the 150 ms restart window — finalize now
+            recognitionRef.current = null
+            stopPendingRef.current = false
+            setState('done')
           }
         }, 150)
+      } else if (!shouldRestartRef.current && recognitionRef.current === recognition && stopPendingRef.current) {
+        // Intentional stop: all onresult events have already fired, safe to finalize
+        recognitionRef.current = null
+        stopPendingRef.current = false
+        setState('done')
       }
     }
 
     return recognition
   }, [clearTimer])
+
+  // Keep ref in sync so onend's restart path can call it without a circular dependency
+  createRecognitionRef.current = createRecognition
 
   const startRecording = useCallback(() => {
     if (!isSupported) {
@@ -125,6 +147,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setDuration(0)
       accumulatedRef.current = 0
       shouldRestartRef.current = true
+      stopPendingRef.current = false
 
       const recognition = createRecognition()
       recognitionRef.current = recognition
@@ -140,18 +163,21 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
   const stopRecording = useCallback(() => {
     shouldRestartRef.current = false
-    recognitionRef.current?.stop()
-    recognitionRef.current = null
+    stopPendingRef.current = true
     clearTimer()
     accumulatedRef.current = duration
-    setState('done')
+    setState('processing')
     setInterimTranscript('')
+    // Do NOT null recognitionRef here — onend must fire after any final onresult,
+    // and it needs recognitionRef === recognition to enter the finalize branch.
+    try { recognitionRef.current?.stop() } catch { /* ignore */ }
   }, [clearTimer, duration])
 
   const pauseRecording = useCallback(() => {
     shouldRestartRef.current = false
+    stopPendingRef.current = false
     recognitionRef.current?.stop()
-    recognitionRef.current = null
+    recognitionRef.current = null  // null immediately so onend is a no-op for this instance
     clearTimer()
     accumulatedRef.current = duration
     setState('paused')
@@ -161,6 +187,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     if (shouldRestartRef.current) return  // already recording
     try {
       shouldRestartRef.current = true
+      stopPendingRef.current = false
       const recognition = createRecognition()
       recognitionRef.current = recognition
       recognition.start()
@@ -175,6 +202,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
   const resetRecording = useCallback(() => {
     shouldRestartRef.current = false
+    stopPendingRef.current = false
     try { recognitionRef.current?.abort() } catch { /* ignore */ }
     recognitionRef.current = null
     clearTimer()
@@ -189,6 +217,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   useEffect(() => {
     return () => {
       shouldRestartRef.current = false
+      stopPendingRef.current = false
       try { recognitionRef.current?.abort() } catch { /* ignore */ }
       recognitionRef.current = null
       clearTimer()

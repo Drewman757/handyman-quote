@@ -510,6 +510,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                             placeholder="e.g. Flood Room, Master Bathroom…"
                           />
                           <FieldMicButton
+                            fieldType="section_title"
                             onResult={t => updateRow(group.sectionRow!.id, 'title', t.trim())}
                           />
                           <div className="flex flex-col shrink-0">
@@ -551,7 +552,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                                     type="button"
                                     onClick={() => moveItemUp(li.id)}
                                     disabled={isFirstItem}
-                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-40 disabled:cursor-default transition"
                                   >
                                     <ChevronUp className="w-3.5 h-3.5" />
                                   </button>
@@ -559,7 +560,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                                     type="button"
                                     onClick={() => moveItemDown(li.id)}
                                     disabled={isLastItem}
-                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-25 disabled:cursor-default transition"
+                                    className="flex items-center justify-center w-7 h-7 rounded text-gray-400 hover:text-gray-600 disabled:opacity-40 disabled:cursor-default transition"
                                   >
                                     <ChevronDown className="w-3.5 h-3.5" />
                                   </button>
@@ -579,6 +580,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                                   placeholder="Description of work"
                                 />
                                 <FieldMicButton
+                                  fieldType="description"
                                   onResult={t => updateRow(li.id, 'description', t.trim())}
                                 />
                               </div>
@@ -674,6 +676,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                 <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none" />
                 <FieldMicButton
+                  fieldType="payment_terms"
                   onResult={t => setPaymentTerms(prev => {
                     const s = t.trim()
                     if (!prev) return s
@@ -689,6 +692,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none"
                   placeholder="e.g. Price subject to change if additional issues found…" />
                 <FieldMicButton
+                  fieldType="caveats"
                   onResult={t => setCaveats(prev => {
                     const s = t.trim()
                     if (!prev) return s
@@ -704,6 +708,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 resize-none"
                   placeholder="e.g. 0% financing available for 12 months…" />
                 <FieldMicButton
+                  fieldType="financing_options"
                   onResult={t => setFinancingOptions(prev => {
                     const s = t.trim()
                     if (!prev) return s

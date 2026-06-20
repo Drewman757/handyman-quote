@@ -513,7 +513,7 @@ export default function NewQuotePage() {
                         className="flex-1 min-w-0 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder:font-normal placeholder:text-gray-400"
                         placeholder="e.g. Flood Room, Master Bathroom…"
                       />
-                      <FieldMicButton onResult={t => updateRow(row.id, 'title', t.trim())} />
+                      <FieldMicButton fieldType="section_title" onResult={t => updateRow(row.id, 'title', t.trim())} />
                       <button onClick={() => removeRow(row.id)} className="text-red-400 hover:text-red-600 shrink-0">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -537,7 +537,7 @@ export default function NewQuotePage() {
                       <input value={li.description} onChange={e => updateRow(li.id, 'description', e.target.value)}
                         className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
                         placeholder="Description of work" />
-                      <FieldMicButton onResult={t => updateRow(li.id, 'description', t.trim())} />
+                      <FieldMicButton fieldType="description" onResult={t => updateRow(li.id, 'description', t.trim())} />
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       <select value={li.pricing_type} onChange={e => updateRow(li.id, 'pricing_type', e.target.value)}
@@ -620,6 +620,7 @@ export default function NewQuotePage() {
                 <textarea value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} rows={2}
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 resize-none" />
                 <FieldMicButton
+                  fieldType="payment_terms"
                   onResult={t => setPaymentTerms(prev => {
                     const s = t.trim()
                     if (!prev) return s
@@ -635,6 +636,7 @@ export default function NewQuotePage() {
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 resize-none"
                   placeholder="e.g. Price subject to change if additional issues found…" />
                 <FieldMicButton
+                  fieldType="caveats"
                   onResult={t => setCaveats(prev => {
                     const s = t.trim()
                     if (!prev) return s
@@ -650,6 +652,7 @@ export default function NewQuotePage() {
                   className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 resize-none"
                   placeholder="e.g. 0% financing available for 12 months…" />
                 <FieldMicButton
+                  fieldType="financing_options"
                   onResult={t => setFinancingOptions(prev => {
                     const s = t.trim()
                     if (!prev) return s
