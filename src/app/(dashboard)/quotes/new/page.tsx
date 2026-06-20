@@ -616,7 +616,7 @@ export default function NewQuotePage() {
                   onResult={t => setPaymentTerms(prev => {
                     const s = t.trim()
                     if (!prev) return s
-                    return prev + (/[\s.!?,;:]$/.test(prev) ? '' : ' ') + s
+                    return prev + (/\s$/.test(prev) ? '' : ' ') + s
                   })}
                 />
               </div>
@@ -631,7 +631,7 @@ export default function NewQuotePage() {
                   onResult={t => setCaveats(prev => {
                     const s = t.trim()
                     if (!prev) return s
-                    return prev + (/[\s.!?,;:]$/.test(prev) ? '' : ' ') + s
+                    return prev + (/\s$/.test(prev) ? '' : ' ') + s
                   })}
                 />
               </div>
