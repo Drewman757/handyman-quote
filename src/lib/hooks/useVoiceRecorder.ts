@@ -42,6 +42,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   // Finals produced by the CURRENT active instance — rebuilt from scratch on every onresult
   // so we never rely on event.resultIndex, which mobile Chrome reports unreliably
   const currentInstanceFinalRef = useRef('')
+  // Instrumentation only — monotonic counter for labelling SpeechRecognition instances in logs
+  const instanceCounterRef = useRef(0)
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -72,9 +74,15 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     recognition.lang = 'en-US'
     recognition.maxAlternatives = 1
 
+    const instanceId = ++instanceCounterRef.current
+    console.log(`[SR] instance #${instanceId} created t=${Date.now()} priorTranscript="${priorTranscriptRef.current}"`)
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      if (recognitionRef.current !== recognition) return // stale instance — ignore late events
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const snapshot = Array.from(event.results as any[]).map((r: any, i: number) => `[${i}:${r.isFinal ? 'F' : 'I'}]"${r[0].transcript}"`)
+      console.log(`[SR] onresult inst#${instanceId} t=${Date.now()} resultIndex=${event.resultIndex} results.length=${event.results.length} | ${snapshot.join(' ')}`)
+      if (recognitionRef.current !== recognition) { console.log(`[SR] onresult inst#${instanceId} STALE — ignored`); return } // stale instance — ignore late events
       // Scan ALL results in event.results from index 0 on every call.
       // We intentionally ignore event.resultIndex because mobile Chrome unreliably reports
       // resultIndex=0 on subsequent events within the same session, which caused the old
@@ -108,6 +116,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     }
 
     recognition.onend = () => {
+      console.log(`[SR] onend inst#${instanceId} t=${Date.now()} shouldRestart=${shouldRestartRef.current} isActive=${recognitionRef.current === recognition} currentFinal="${currentInstanceFinalRef.current}" priorTranscript="${priorTranscriptRef.current}"`)
       setInterimTranscript('')
 
       if (shouldRestartRef.current && recognitionRef.current === recognition) {
