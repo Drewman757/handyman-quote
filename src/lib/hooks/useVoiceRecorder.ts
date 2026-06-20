@@ -37,6 +37,11 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   // Holds the createRecognition factory so onend can spawn a fresh instance on restart
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createRecognitionRef = useRef<(() => any) | null>(null)
+  // Transcript accumulated from all COMPLETED instances (committed when an instance retires)
+  const priorTranscriptRef = useRef('')
+  // Finals produced by the CURRENT active instance — rebuilt from scratch on every onresult
+  // so we never rely on event.resultIndex, which mobile Chrome reports unreliably
+  const currentInstanceFinalRef = useRef('')
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -70,17 +75,24 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       if (recognitionRef.current !== recognition) return // stale instance — ignore late events
-      let final = ''
+      // Scan ALL results in event.results from index 0 on every call.
+      // We intentionally ignore event.resultIndex because mobile Chrome unreliably reports
+      // resultIndex=0 on subsequent events within the same session, which caused the old
+      // (prev) => prev + final accumulation to re-prepend all prior finals on each new word.
+      // Instead we rebuild the complete current-instance transcript fresh each time and SET it.
+      let instanceFinal = ''
       let interim = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          final += result[0].transcript + ' '
+          instanceFinal += result[0].transcript + ' '
         } else {
           interim += result[0].transcript
         }
       }
-      if (final) setTranscript((prev) => prev + final)
+      currentInstanceFinalRef.current = instanceFinal
+      // SET (not +=): full transcript = completed prior instances + this instance's finals
+      setTranscript(priorTranscriptRef.current + instanceFinal)
       setInterimTranscript(interim)
     }
 
@@ -99,6 +111,10 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setInterimTranscript('')
 
       if (shouldRestartRef.current && recognitionRef.current === recognition) {
+        // Commit this instance's finals to the prior-transcript accumulator before retiring,
+        // so the next instance inherits the complete transcript built so far.
+        priorTranscriptRef.current += currentInstanceFinalRef.current
+        currentInstanceFinalRef.current = ''
         // Retire this instance immediately so any late onresult (firing after onend but
         // during the 150 ms restart gap) is rejected by the guard — not when the new
         // instance is assigned 150 ms from now.
@@ -149,6 +165,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
       setInterimTranscript('')
       setDuration(0)
       accumulatedRef.current = 0
+      priorTranscriptRef.current = ''
+      currentInstanceFinalRef.current = ''
       shouldRestartRef.current = true
       stopPendingRef.current = false
 
@@ -179,6 +197,10 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
   const pauseRecording = useCallback(() => {
     shouldRestartRef.current = false
     stopPendingRef.current = false
+    // Commit current instance finals now: onend is skipped for paused instances
+    // (recognitionRef is nulled synchronously below, making onend a no-op).
+    priorTranscriptRef.current += currentInstanceFinalRef.current
+    currentInstanceFinalRef.current = ''
     recognitionRef.current?.stop()
     recognitionRef.current = null  // null immediately so onend is a no-op for this instance
     clearTimer()
@@ -191,6 +213,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     try {
       shouldRestartRef.current = true
       stopPendingRef.current = false
+      currentInstanceFinalRef.current = ''  // fresh instance starts with no finals yet
       const recognition = createRecognition()
       recognitionRef.current = recognition
       recognition.start()
@@ -209,6 +232,8 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
     try { recognitionRef.current?.abort() } catch { /* ignore */ }
     recognitionRef.current = null
     clearTimer()
+    priorTranscriptRef.current = ''
+    currentInstanceFinalRef.current = ''
     setTranscript('')
     setInterimTranscript('')
     setDuration(0)
