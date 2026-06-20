@@ -53,6 +53,8 @@ export default function NewQuotePage() {
   const [step, setStep] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [confirmSend, setConfirmSend] = useState(false)
+  const [pricingChecked, setPricingChecked] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const priceFocusRef = useRef<HTMLInputElement>(null)
   const [suggestedItemIds, setSuggestedItemIds] = useState<Set<string>>(new Set())
@@ -756,17 +758,47 @@ export default function NewQuotePage() {
 
           {error && <p className="text-sm text-red-600 bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
 
-          <div className="flex gap-3">
-            <button onClick={() => setStep(2)} className="border border-gray-300 text-gray-700 font-medium px-4 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
-            <button onClick={() => handleSave(false)} disabled={saving}
-              className="flex-1 border border-[#0E6E7E] text-[#0E6E7E] font-medium py-2.5 rounded-lg text-sm hover:bg-[#EFF9FA] transition disabled:opacity-50">
-              {saving ? 'Saving…' : 'Save as draft'}
-            </button>
-            <button onClick={() => handleSave(true)} disabled={saving}
-              className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
-              {saving ? 'Sending…' : 'Send to client'}
-            </button>
-          </div>
+          {confirmSend ? (
+            <div className="bg-[#EFF9FA] border border-[#0E6E7E]/30 rounded-xl p-4 space-y-3">
+              <p className="text-sm text-gray-800 font-medium">Before sending — please double-check all pricing is correct. Clients will see this quote as final.</p>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pricingChecked}
+                  onChange={e => setPricingChecked(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[#0E6E7E]"
+                />
+                <span className="text-sm text-gray-700">I&apos;ve reviewed the pricing</span>
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setConfirmSend(false); setPricingChecked(false) }}
+                  className="flex-1 border border-gray-300 text-gray-700 font-medium py-2 rounded-lg text-sm hover:bg-gray-50 transition">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSave(true)}
+                  disabled={!pricingChecked || saving}
+                  className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2 rounded-lg text-sm transition disabled:opacity-50">
+                  {saving ? 'Sending…' : 'Confirm & send'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-3">
+              <button onClick={() => setStep(2)} className="border border-gray-300 text-gray-700 font-medium px-4 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">Back</button>
+              <button onClick={() => handleSave(false)} disabled={saving}
+                className="flex-1 border border-[#0E6E7E] text-[#0E6E7E] font-medium py-2.5 rounded-lg text-sm hover:bg-[#EFF9FA] transition disabled:opacity-50">
+                {saving ? 'Saving…' : 'Save as draft'}
+              </button>
+              <button
+                onClick={() => { setConfirmSend(true); setPricingChecked(false) }}
+                disabled={saving}
+                className="flex-1 bg-[#0E6E7E] hover:bg-[#0A5560] text-white font-medium py-2.5 rounded-lg text-sm transition disabled:opacity-50">
+                Send to client
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
