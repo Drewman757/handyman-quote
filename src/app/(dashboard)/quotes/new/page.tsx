@@ -129,6 +129,7 @@ export default function NewQuotePage() {
 
   // Debug overlay — active only when ?debug=1 is in the URL
   const [debugMode, setDebugMode] = useState(false)
+  const [debugExpanded, setDebugExpanded] = useState(false)
   const [debugLines, setDebugLines] = useState<string[]>([])
   const debugOverlayRef = useRef<HTMLDivElement>(null)
 
@@ -994,45 +995,94 @@ export default function NewQuotePage() {
         </div>
       )}
 
-      {/* Debug overlay — visible only with ?debug=1 */}
+      {/* Debug overlay — visible only with ?debug=1; pointer-events:none on wrapper so page is always tappable */}
       {debugMode && (
         <div style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0,
-          height: '33vh', zIndex: 9999,
-          background: 'rgba(0,0,0,0.88)',
-          display: 'flex', flexDirection: 'column',
+          position: 'fixed', inset: 0, zIndex: 9999,
+          pointerEvents: 'none',
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'flex-end',
+          paddingBottom: 'env(safe-area-inset-bottom, 8px)', paddingRight: 8,
         }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '4px 8px', borderBottom: '1px solid rgba(255,255,255,0.2)', flexShrink: 0,
-          }}>
-            <span style={{ color: '#aaa', fontFamily: 'monospace', fontSize: 10 }}>
-              SR Debug · {debugLines.length} lines
-            </span>
+          {debugExpanded ? (
+            /* Expanded panel — anchored bottom-right, scrollable, never full-width so layout buttons remain tappable on the left */
+            <div style={{
+              pointerEvents: 'auto',
+              width: 'min(360px, calc(100vw - 16px))',
+              maxHeight: '40vh',
+              background: 'rgba(0,0,0,0.90)',
+              border: '1px solid rgba(100,170,255,0.4)',
+              borderRadius: 8,
+              display: 'flex', flexDirection: 'column',
+              marginBottom: 4,
+            }}>
+              {/* Header row */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '5px 8px', borderBottom: '1px solid rgba(255,255,255,0.15)', flexShrink: 0,
+              }}>
+                <span style={{ color: '#aaa', fontFamily: 'monospace', fontSize: 10 }}>
+                  SR Debug · {debugLines.length} lines
+                </span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(debugLines.join('\n'))}
+                    style={{
+                      pointerEvents: 'auto',
+                      color: '#4af', fontFamily: 'monospace', fontSize: 10,
+                      background: 'none', border: '1px solid #4af',
+                      borderRadius: 3, padding: '2px 7px', cursor: 'pointer',
+                    }}
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => setDebugExpanded(false)}
+                    style={{
+                      pointerEvents: 'auto',
+                      color: '#aaa', fontFamily: 'monospace', fontSize: 10,
+                      background: 'none', border: '1px solid rgba(255,255,255,0.25)',
+                      borderRadius: 3, padding: '2px 7px', cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              {/* Log lines */}
+              <div
+                ref={debugOverlayRef}
+                style={{ flex: 1, overflowY: 'auto', padding: '4px 8px', minHeight: 0 }}
+              >
+                {debugLines.map((line, i) => (
+                  <div key={i} style={{
+                    color: '#fff', fontFamily: 'monospace', fontSize: 10,
+                    lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                  }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Collapsed pill — tiny tap target in bottom-right corner only */
             <button
-              onClick={() => navigator.clipboard.writeText(debugLines.join('\n'))}
+              onClick={() => setDebugExpanded(true)}
               style={{
-                color: '#4af', fontFamily: 'monospace', fontSize: 10,
-                background: 'none', border: '1px solid #4af',
-                borderRadius: 3, padding: '2px 8px', cursor: 'pointer',
+                pointerEvents: 'auto',
+                background: 'rgba(0,0,0,0.75)',
+                color: '#4af',
+                fontFamily: 'monospace',
+                fontSize: 10,
+                border: '1px solid rgba(100,170,255,0.5)',
+                borderRadius: 6,
+                padding: '5px 10px',
+                cursor: 'pointer',
+                marginBottom: 4,
               }}
             >
-              Copy logs
+              SR Debug · {debugLines.length}
             </button>
-          </div>
-          <div
-            ref={debugOverlayRef}
-            style={{ flex: 1, overflowY: 'auto', padding: '4px 8px' }}
-          >
-            {debugLines.map((line, i) => (
-              <div key={i} style={{
-                color: '#fff', fontFamily: 'monospace', fontSize: 10,
-                lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-              }}>
-                {line}
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       )}
     </div>
