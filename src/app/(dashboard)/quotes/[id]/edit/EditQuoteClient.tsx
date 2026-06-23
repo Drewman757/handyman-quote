@@ -598,7 +598,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                                     value={li.unit_price}
                                     onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
                                     onFocus={e => e.target.select()}
-                                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                    className="flex-1 min-w-0 px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     placeholder="Price"
                                     min={0} step={0.01}
                                   />
@@ -616,7 +616,7 @@ export function EditQuoteClient({ id }: { id: string }) {
                                       value={li.quantity}
                                       onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
                                       onFocus={e => e.target.select()}
-                                      className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900"
+                                      className="flex-1 min-w-0 px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                       placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5}
                                     />
                                     <FieldMicButton

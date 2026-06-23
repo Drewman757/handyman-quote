@@ -716,7 +716,7 @@ export default function NewQuotePage() {
                                     ref={li.id === firstSuggestedId ? priceFocusRef : undefined}
                                     value={li.unit_price}
                                     onChange={e => updateRow(li.id, 'unit_price', parseFloat(e.target.value) || 0)}
-                                    className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 ${
+                                    className={`flex-1 min-w-0 px-2 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 text-gray-900 placeholder:text-gray-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
                                       needsPrice
                                         ? 'border-[#0E6E7E] bg-[#EFF9FA] focus:ring-[#0E6E7E]'
                                         : 'border-gray-300 focus:ring-[#0E6E7E]'
@@ -733,7 +733,7 @@ export default function NewQuotePage() {
                                 </div>
                                 {li.pricing_type !== 'fixed' && (
                                   <input type="number" value={li.quantity} onChange={e => updateRow(li.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400"
+                                    className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0E6E7E] text-gray-900 placeholder:text-gray-400 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                                     placeholder={getUnitLabel(li.pricing_type)} min={0} step={0.5} />
                                 )}
                               </div>
