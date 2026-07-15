@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { UserPlus, Copy, Check, X } from 'lucide-react'
+import { UserPlus, Copy, Check, X, AlertTriangle } from 'lucide-react'
 
 function generatePassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -23,7 +23,7 @@ export function CreateContractorForm() {
   const [subscriptionStatus, setSubscriptionStatus] = useState('comp')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ email: string; tempPassword: string } | null>(null)
+  const [result, setResult] = useState<{ email: string; tempPassword: string; warning?: string } | null>(null)
   const [copied, setCopied] = useState(false)
 
   function reset() {
@@ -52,7 +52,7 @@ export function CreateContractorForm() {
         setError(data.error || 'Failed to create contractor')
         return
       }
-      setResult({ email: data.email, tempPassword: data.tempPassword })
+      setResult({ email: data.email, tempPassword: data.tempPassword, warning: data.warning })
       router.refresh()
     } finally {
       setLoading(false)
@@ -95,6 +95,12 @@ export function CreateContractorForm() {
           <p className="text-sm text-gray-600">
             Account created. Send these credentials to the contractor — they should sign in and change their password.
           </p>
+          {result.warning && (
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">{result.warning}</p>
+            </div>
+          )}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm space-y-1">
             <p><span className="text-gray-900">Email:</span> {result.email}</p>
             <p><span className="text-gray-900">Temp password:</span> {result.tempPassword}</p>

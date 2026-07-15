@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdmin } from '@supabase/supabase-js'
 import { addMonths } from 'date-fns'
+import { Resend } from 'resend'
 
 export const dynamic = 'force-dynamic'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 function getAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -57,6 +60,7 @@ export async function POST(req: NextRequest) {
 
     const status = subscriptionStatus || 'comp'
     const isTrialStatus = status === 'comp' || status === 'beta'
+    const trialEndsAt = isTrialStatus ? addMonths(new Date(), 2) : null
 
     const { error: contractorErr } = await admin.from('contractors').insert({
       user_id: userData.user.id,
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
       email,
       agreed_to_terms_at: null,
       subscription_status: status,
-      trial_ends_at: isTrialStatus ? addMonths(new Date(), 2).toISOString() : null,
+      trial_ends_at: trialEndsAt ? trialEndsAt.toISOString() : null,
     })
 
     if (contractorErr) {
@@ -76,7 +80,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create contractor: ' + contractorErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, email, tempPassword })
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
+    const loginLink = `${siteUrl}/login`
+    const trialEndsLabel = trialEndsAt?.toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric',
+    })
+
+    let warning: string | undefined
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+        to: email,
+        subject: 'Welcome to QuoteBuilder — your account is ready',
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+    <div style="background:#f97316;padding:24px;text-align:center;">
+      <h1 style="color:#fff;margin:0;font-size:20px;">QuoteBuilder</h1>
+      <p style="color:#fed7aa;margin:4px 0 0;font-size:14px;">Your account is ready!</p>
+    </div>
+    <div style="padding:24px;">
+      <p style="color:#374151;font-size:15px;">Hi ${ownerName},</p>
+      <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+        Welcome to QuoteBuilder! An account has been set up for ${businessName} — here are your sign-in details.
+      </p>
+      <div style="margin:20px 0;padding:16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-family:monospace;font-size:14px;">
+        <p style="margin:0 0 6px;color:#111827;"><span style="color:#6b7280;">Email:</span> ${email}</p>
+        <p style="margin:0;color:#111827;"><span style="color:#6b7280;">Temp password:</span> ${tempPassword}</p>
+      </div>
+      <div style="margin:28px 0;text-align:center;">
+        <a href="${loginLink}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Sign in to QuoteBuilder
+        </a>
+      </div>
+      <p style="color:#6b7280;font-size:13px;line-height:1.6;">
+        Once you're in, head to your account settings to change your password from the temporary one above.
+      </p>
+      ${trialEndsLabel ? `
+      <p style="color:#6b7280;font-size:13px;line-height:1.6;">
+        You're on a 2-month beta trial that runs through <strong>${trialEndsLabel}</strong> — completely free, no card
+        required. If you're finding it useful, you're welcome to continue afterward for $50/month, but there's no
+        pressure either way.
+      </p>` : ''}
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#9ca3af;">
+        <p style="margin:0;">QuoteBuilder &mdash; Professional quotes for handyman services</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+      })
+    } catch (emailErr) {
+      console.error('[admin/create-contractor] welcome email failed', emailErr)
+      warning = 'Account created, but the welcome email failed to send — share the credentials below with the contractor manually.'
+    }
+
+    return NextResponse.json({ success: true, email, tempPassword, warning })
   } catch (err) {
     console.error('[POST /api/admin/create-contractor]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
