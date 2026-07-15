@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Shield } from 'lucide-react'
 import { AdminTable } from './AdminTable'
+import { CreateContractorForm } from './CreateContractorForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,6 +92,7 @@ export default async function AdminPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-4">
+        <CreateContractorForm />
         <AdminTable rows={rows} currentUserId={caller.id} />
       </main>
     </div>
