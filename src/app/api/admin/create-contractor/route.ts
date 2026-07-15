@@ -97,9 +97,9 @@ export async function POST(req: NextRequest) {
 <html>
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-    <div style="background:#f97316;padding:24px;text-align:center;">
+    <div style="background:#0E6E7E;padding:24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">QuoteBuilder</h1>
-      <p style="color:#fed7aa;margin:4px 0 0;font-size:14px;">Your account is ready!</p>
+      <p style="color:#b3dde2;margin:4px 0 0;font-size:14px;">Your account is ready!</p>
     </div>
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${ownerName},</p>
@@ -107,11 +107,11 @@ export async function POST(req: NextRequest) {
         Welcome to QuoteBuilder! An account has been set up for ${businessName} — here are your sign-in details.
       </p>
       <div style="margin:20px 0;padding:16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-family:monospace;font-size:14px;">
-        <p style="margin:0 0 6px;color:#111827;"><span style="color:#6b7280;">Email:</span> ${email}</p>
-        <p style="margin:0;color:#111827;"><span style="color:#6b7280;">Temp password:</span> ${tempPassword}</p>
+        <p style="margin:0 0 6px;color:#1a1a1a;"><span style="color:#1a1a1a;">Email:</span> ${email}</p>
+        <p style="margin:0;color:#1a1a1a;"><span style="color:#1a1a1a;">Temp password:</span> ${tempPassword}</p>
       </div>
       <div style="margin:28px 0;text-align:center;">
-        <a href="${loginLink}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+        <a href="${loginLink}" style="display:inline-block;background:#0E6E7E;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
           Sign in to QuoteBuilder
         </a>
       </div>
