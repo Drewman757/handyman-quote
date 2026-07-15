@@ -83,12 +83,22 @@ export async function POST(req: NextRequest) {
 
     // Recovery link reuses the existing forgot-password flow (auth/confirm -> update-password),
     // which already listens for the PASSWORD_RECOVERY auth event and lets the user set a password.
+    //
+    // We deliberately do NOT email linkData.properties.action_link — that points at Supabase's
+    // hosted /auth/v1/verify endpoint, which (for Admin API-generated links with no client-side
+    // PKCE flow) redirects back to redirectTo with the session in a URL fragment (#access_token=...).
+    // Fragments are never sent to a server, so our /auth/confirm route handler would never see it
+    // and would fall through to /login?error=invalid_link. Building the link from hashed_token and
+    // pointing it straight at our own /auth/confirm route puts the token in the query string instead,
+    // which that route's token_hash branch already knows how to verify.
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,
       options: { redirectTo: `${siteUrl}/auth/confirm?next=/update-password` },
     })
-    const inviteLink = linkData?.properties?.action_link
+    const inviteLink = linkData?.properties?.hashed_token
+      ? `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=recovery&next=/update-password`
+      : undefined
 
     let warning: string | undefined
     if (linkErr || !inviteLink) {
