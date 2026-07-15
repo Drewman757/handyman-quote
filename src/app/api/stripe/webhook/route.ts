@@ -44,6 +44,31 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session
     const meta = session.metadata || {}
 
+    // Upgrade path: a comp/beta contractor converting to paid via
+    // /api/stripe/upgrade-checkout carries contractor_id in metadata (and
+    // client_reference_id). Update their existing row in place and stop —
+    // never fall through to the new-signup/pending_signups logic below.
+    const upgradeContractorId = meta.contractor_id || session.client_reference_id || ''
+    if (upgradeContractorId) {
+      const admin = getAdmin()
+      const stripeSubscriptionId =
+        typeof session.subscription === 'string' ? session.subscription : ''
+
+      const { error: upgradeErr } = await admin
+        .from('contractors')
+        .update({
+          subscription_status: 'active',
+          stripe_subscription_id: stripeSubscriptionId,
+        })
+        .eq('id', upgradeContractorId)
+
+      if (upgradeErr) {
+        console.error('[webhook] upgrade update failed', upgradeErr)
+      }
+
+      return NextResponse.json({ received: true })
+    }
+
     const name = meta.name || ''
     const company = meta.company || ''
     const email = session.customer_email || ''

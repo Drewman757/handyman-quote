@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdmin } from '@supabase/supabase-js'
+import { addMonths } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: createErr?.message || 'Failed to create user' }, { status: 500 })
     }
 
+    const status = subscriptionStatus || 'comp'
+    const isTrialStatus = status === 'comp' || status === 'beta'
+
     const { error: contractorErr } = await admin.from('contractors').insert({
       user_id: userData.user.id,
       business_name: businessName,
@@ -61,7 +65,8 @@ export async function POST(req: NextRequest) {
       phone: '',
       email,
       agreed_to_terms_at: null,
-      subscription_status: subscriptionStatus || 'comp',
+      subscription_status: status,
+      trial_ends_at: isTrialStatus ? addMonths(new Date(), 2).toISOString() : null,
     })
 
     if (contractorErr) {
