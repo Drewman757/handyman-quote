@@ -32,24 +32,20 @@ export async function POST(req: NextRequest) {
       .single()
     if (!caller?.is_admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const { email, businessName, ownerName, tempPassword, subscriptionStatus } = await req.json() as {
+    const { email, businessName, ownerName, subscriptionStatus } = await req.json() as {
       email: string
       businessName: string
       ownerName: string
-      tempPassword: string
       subscriptionStatus: string
     }
 
-    if (!email || !businessName || !ownerName || !tempPassword) {
+    if (!email || !businessName || !ownerName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
-    if (tempPassword.length < 6) {
-      return NextResponse.json({ error: 'Temp password must be at least 6 characters' }, { status: 400 })
-    }
 
+    // No password — the contractor sets their own via the invite link emailed below.
     const { data: userData, error: createErr } = await admin.auth.admin.createUser({
       email,
-      password: tempPassword,
       email_confirm: true,
     })
 
@@ -81,18 +77,30 @@ export async function POST(req: NextRequest) {
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
-    const loginLink = `${siteUrl}/login`
     const trialEndsLabel = trialEndsAt?.toLocaleDateString('en-US', {
       month: 'long', day: 'numeric', year: 'numeric',
     })
 
+    // Recovery link reuses the existing forgot-password flow (auth/confirm -> update-password),
+    // which already listens for the PASSWORD_RECOVERY auth event and lets the user set a password.
+    const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: `${siteUrl}/auth/confirm?next=/update-password` },
+    })
+    const inviteLink = linkData?.properties?.action_link
+
     let warning: string | undefined
-    try {
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
-        to: email,
-        subject: 'Welcome to QuoteBuilder — your account is ready',
-        html: `
+    if (linkErr || !inviteLink) {
+      console.error('[admin/create-contractor] generateLink failed', linkErr)
+      warning = 'Account created, but generating the invite link failed — send a password reset from the Supabase dashboard manually.'
+    } else {
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+          to: email,
+          subject: 'Welcome to QuoteBuilder — your account is ready',
+          html: `
 <!DOCTYPE html>
 <html>
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
@@ -104,20 +112,14 @@ export async function POST(req: NextRequest) {
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${ownerName},</p>
       <p style="color:#6b7280;font-size:14px;line-height:1.6;">
-        Welcome to QuoteBuilder! An account has been set up for ${businessName} — here are your sign-in details.
+        Welcome to QuoteBuilder! An account has been set up for ${businessName}. Click below to set your password
+        and get started.
       </p>
-      <div style="margin:20px 0;padding:16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-family:monospace;font-size:14px;">
-        <p style="margin:0 0 6px;color:#1a1a1a;"><span style="color:#1a1a1a;">Email:</span> ${email}</p>
-        <p style="margin:0;color:#1a1a1a;"><span style="color:#1a1a1a;">Temp password:</span> ${tempPassword}</p>
-      </div>
       <div style="margin:28px 0;text-align:center;">
-        <a href="${loginLink}" style="display:inline-block;background:#0E6E7E;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
-          Sign in to QuoteBuilder
+        <a href="${inviteLink}" style="display:inline-block;background:#0E6E7E;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Set up your account
         </a>
       </div>
-      <p style="color:#6b7280;font-size:13px;line-height:1.6;">
-        Once you're in, head to your account settings to change your password from the temporary one above.
-      </p>
       ${trialEndsLabel ? `
       <p style="color:#6b7280;font-size:13px;line-height:1.6;">
         You're on a 2-month beta trial that runs through <strong>${trialEndsLabel}</strong> — completely free, no card
@@ -131,13 +133,20 @@ export async function POST(req: NextRequest) {
   </div>
 </body>
 </html>`,
-      })
-    } catch (emailErr) {
-      console.error('[admin/create-contractor] welcome email failed', emailErr)
-      warning = 'Account created, but the welcome email failed to send — share the credentials below with the contractor manually.'
+        })
+      } catch (emailErr) {
+        console.error('[admin/create-contractor] invite email failed', emailErr)
+        warning = 'Account created, but the invite email failed to send — share this link with the contractor manually.'
+      }
     }
 
-    return NextResponse.json({ success: true, email, tempPassword, warning })
+    return NextResponse.json({
+      success: true,
+      email,
+      warning,
+      // Only needed by the UI as a copyable fallback when the email above didn't go out.
+      inviteLink: warning ? inviteLink : undefined,
+    })
   } catch (err) {
     console.error('[POST /api/admin/create-contractor]', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
