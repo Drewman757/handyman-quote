@@ -96,8 +96,8 @@ export function CreateContractorForm() {
             Account created. Send these credentials to the contractor — they should sign in and change their password.
           </p>
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 font-mono text-sm space-y-1">
-            <p><span className="text-gray-500">Email:</span> {result.email}</p>
-            <p><span className="text-gray-500">Temp password:</span> {result.tempPassword}</p>
+            <p><span className="text-gray-900">Email:</span> {result.email}</p>
+            <p><span className="text-gray-900">Temp password:</span> {result.tempPassword}</p>
           </div>
           <div className="flex gap-2">
             <button
