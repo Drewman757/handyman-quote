@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Shield } from 'lucide-react'
 import { AdminTable } from './AdminTable'
 import { CreateContractorForm } from './CreateContractorForm'
-import { SignOutButton } from './SignOutButton'
+import { SignOutButton } from '@/components/SignOutButton'
 
 export const dynamic = 'force-dynamic'
 

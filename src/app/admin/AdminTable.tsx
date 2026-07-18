@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, UserX, UserCheck, AlertTriangle } from 'lucide-react'
+import { Trash2, UserX, UserCheck, AlertTriangle, Mail, Check } from 'lucide-react'
 
 interface ContractorRow {
   id: string
@@ -19,6 +19,25 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
   const router = useRouter()
   const [busy, setBusy] = useState<Record<string, boolean>>({})
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [emailBusy, setEmailBusy] = useState<Record<string, boolean>>({})
+  const [emailSent, setEmailSent] = useState<Record<string, boolean>>({})
+
+  async function handleSendUpgradeEmail(contractorId: string) {
+    setEmailBusy(b => ({ ...b, [contractorId]: true }))
+    try {
+      const res = await fetch('/api/admin/send-upgrade-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contractorId }),
+      })
+      if (res.ok) {
+        setEmailSent(s => ({ ...s, [contractorId]: true }))
+        setTimeout(() => setEmailSent(s => ({ ...s, [contractorId]: false })), 2000)
+      }
+    } finally {
+      setEmailBusy(b => ({ ...b, [contractorId]: false }))
+    }
+  }
 
   async function toggleSuspend(contractorId: string, currentlySuspended: boolean) {
     setBusy(b => ({ ...b, [contractorId]: true }))
@@ -140,6 +159,20 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                         </div>
                       ) : (
                         <>
+                          {/* Send upgrade email — works regardless of trial/suspension state */}
+                          <button
+                            onClick={() => handleSendUpgradeEmail(c.id)}
+                            disabled={emailBusy[c.id]}
+                            title={emailSent[c.id] ? 'Sent!' : 'Send upgrade email'}
+                            className="flex items-center gap-1.5 px-2.5 py-1 border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 whitespace-nowrap"
+                          >
+                            {emailSent[c.id]
+                              ? <Check className="w-3.5 h-3.5 text-green-600" />
+                              : <Mail className="w-3.5 h-3.5" />
+                            }
+                            {emailBusy[c.id] ? 'Sending…' : emailSent[c.id] ? 'Sent!' : 'Send email'}
+                          </button>
+
                           {/* Suspend / Reactivate — disabled for self */}
                           <button
                             onClick={() => !isSelf && toggleSuspend(c.id, suspended)}
@@ -246,7 +279,21 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 pt-1">
+                <div className="space-y-2 pt-1">
+                  {/* Send upgrade email — works regardless of trial/suspension state */}
+                  <button
+                    onClick={() => handleSendUpgradeEmail(c.id)}
+                    disabled={emailBusy[c.id]}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50"
+                  >
+                    {emailSent[c.id]
+                      ? <Check className="w-3.5 h-3.5 text-green-600" />
+                      : <Mail className="w-3.5 h-3.5" />
+                    }
+                    {emailBusy[c.id] ? 'Sending…' : emailSent[c.id] ? 'Sent!' : 'Send upgrade email'}
+                  </button>
+
+                  <div className="flex items-center gap-2">
                   {/* Suspend / Reactivate — disabled for self */}
                   <button
                     onClick={() => !isSelf && toggleSuspend(c.id, suspended)}
@@ -274,6 +321,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                     <Trash2 className="w-3.5 h-3.5" />
                     Delete
                   </button>
+                  </div>
                 </div>
               )}
             </div>

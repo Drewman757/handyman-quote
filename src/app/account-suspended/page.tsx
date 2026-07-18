@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ShieldAlert } from 'lucide-react'
+import { SignOutButton } from '@/components/SignOutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,6 +27,9 @@ export default async function AccountSuspendedPage() {
         >
           Lineagelabsllc@gmail.com
         </Link>
+        <div className="mt-6 pt-6 border-t border-gray-100 flex justify-center">
+          <SignOutButton />
+        </div>
       </div>
     </div>
   )
