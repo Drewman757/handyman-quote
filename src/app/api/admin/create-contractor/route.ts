@@ -141,6 +141,38 @@ export async function POST(req: NextRequest) {
         required. If you're finding it useful, you're welcome to continue afterward for $50/month, but there's no
         pressure either way.
       </p>` : ''}
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;">
+        <p style="color:#0E6E7E;font-size:13px;font-weight:700;letter-spacing:0.02em;margin:0 0 10px;">Getting Started</p>
+
+        <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 10px;">
+          The button above is for first-time setup only. Once you've set your password, sign in directly at the
+          link below going forward — no need to reuse this email.
+        </p>
+
+        <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0 0 14px;">
+          <strong style="color:#374151;">Signing in:</strong> Go to
+          <a href="${siteUrl}/login" style="color:#0E6E7E;">${siteUrl.replace(/^https?:\/\//, '')}</a>
+          and log in with your email and the password you just created.
+        </p>
+
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;">
+          <p style="color:#374151;font-size:12px;font-weight:700;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.05em;">
+            Add to your home screen
+          </p>
+          <p style="color:#6b7280;font-size:12px;line-height:1.7;margin:0 0 10px;">
+            <strong style="color:#374151;">iPhone (Safari):</strong><br>
+            Open the link in Safari &rarr; tap the Share icon &rarr; scroll down and tap &ldquo;Add to Home Screen&rdquo;
+            &rarr; tap Add.
+          </p>
+          <p style="color:#6b7280;font-size:12px;line-height:1.7;margin:0;">
+            <strong style="color:#374151;">Android (Chrome):</strong><br>
+            Open the link in Chrome &rarr; tap the three-dot menu &rarr; tap &ldquo;Add to Home Screen&rdquo; or
+            &ldquo;Install app&rdquo; &rarr; confirm.
+          </p>
+        </div>
+      </div>
+
       <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f3f4f6;font-size:13px;color:#9ca3af;">
         <p style="margin:0;">QuoteBuilder &mdash; Professional quotes for handyman services</p>
       </div>
