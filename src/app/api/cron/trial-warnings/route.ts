@@ -68,9 +68,9 @@ export async function GET(req: NextRequest) {
 <html>
 <body style="font-family:Arial,sans-serif;background:#f9fafb;margin:0;padding:20px;">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-    <div style="background:#f97316;padding:24px;text-align:center;">
+    <div style="background:#0E6E7E;padding:24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:20px;">QuoteBuilder</h1>
-      <p style="color:#fed7aa;margin:4px 0 0;font-size:14px;">Your trial is ending soon</p>
+      <p style="color:#b3dde2;margin:4px 0 0;font-size:14px;">Your trial is ending soon</p>
     </div>
     <div style="padding:24px;">
       <p style="color:#374151;font-size:15px;">Hi ${contractor.owner_name || contractor.business_name},</p>
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
         left them the moment you upgrade.
       </p>
       <div style="margin:28px 0;text-align:center;">
-        <a href="${upgradeUrl}" style="display:inline-block;background:#f97316;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
+        <a href="${upgradeUrl}" style="display:inline-block;background:#0E6E7E;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:8px;text-decoration:none;">
           Upgrade now — $50/month
         </a>
       </div>
