@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Shield } from 'lucide-react'
 import { AdminTable } from './AdminTable'
 import { CreateContractorForm } from './CreateContractorForm'
+import { SignOutButton } from './SignOutButton'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,19 +75,23 @@ export default async function AdminPage() {
             </div>
           </div>
 
-          {/* Stats pills */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="px-3 py-1 rounded-full bg-gray-100 font-medium text-gray-600">
-              {rows.length} total
-            </span>
-            <span className="px-3 py-1 rounded-full bg-green-100 font-semibold text-green-700">
-              {activeCount} active
-            </span>
-            {suspendedCount > 0 && (
-              <span className="px-3 py-1 rounded-full bg-red-100 font-semibold text-red-700">
-                {suspendedCount} suspended
+          <div className="flex items-center gap-4">
+            {/* Stats pills */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-3 py-1 rounded-full bg-gray-100 font-medium text-gray-600">
+                {rows.length} total
               </span>
-            )}
+              <span className="px-3 py-1 rounded-full bg-green-100 font-semibold text-green-700">
+                {activeCount} active
+              </span>
+              {suspendedCount > 0 && (
+                <span className="px-3 py-1 rounded-full bg-red-100 font-semibold text-red-700">
+                  {suspendedCount} suspended
+                </span>
+              )}
+            </div>
+
+            <SignOutButton />
           </div>
         </div>
       </header>
