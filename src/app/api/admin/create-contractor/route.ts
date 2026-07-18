@@ -88,16 +88,21 @@ export async function POST(req: NextRequest) {
     // hosted /auth/v1/verify endpoint, which (for Admin API-generated links with no client-side
     // PKCE flow) redirects back to redirectTo with the session in a URL fragment (#access_token=...).
     // Fragments are never sent to a server, so our /auth/confirm route handler would never see it
-    // and would fall through to /login?error=invalid_link. Building the link from hashed_token and
-    // pointing it straight at our own /auth/confirm route puts the token in the query string instead,
-    // which that route's token_hash branch already knows how to verify.
+    // and would fall through to /login?error=invalid_link.
+    //
+    // We also don't email a direct /auth/confirm link — that route verifies (and consumes) the
+    // single-use token on a plain GET, so email link-scanners (Gmail Safe Browsing, corporate
+    // Safe Links, etc.) that pre-fetch links before the human clicks would silently burn the
+    // token first. Instead we point at /invite/confirm, an intermediate page that only hits
+    // /auth/confirm when the user actually clicks a button — scanners that GET the page itself
+    // don't trigger verification.
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type: 'recovery',
       email,
       options: { redirectTo: `${siteUrl}/auth/confirm?next=/update-password` },
     })
     const inviteLink = linkData?.properties?.hashed_token
-      ? `${siteUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=recovery&next=/update-password`
+      ? `${siteUrl}/invite/confirm?token_hash=${linkData.properties.hashed_token}&type=recovery&next=/update-password`
       : undefined
 
     let warning: string | undefined
