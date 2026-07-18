@@ -14,11 +14,25 @@ export default function UpdatePasswordPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)
       }
     })
+
+    // Fallback: PASSWORD_RECOVERY only fires when this browser's own client instance
+    // calls verifyOtp directly (e.g. parsing #access_token=... from the URL). Our invite
+    // flow verifies server-side (in /auth/confirm) and arrives here with the session
+    // already established via cookies, so this client just sees a pre-existing session
+    // on cold init — no PASSWORD_RECOVERY event ever fires for it. Checking for a session
+    // directly covers that case (and any other way a valid session could show up here).
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setReady(true)
+    })
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
