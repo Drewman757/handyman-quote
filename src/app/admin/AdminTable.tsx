@@ -59,7 +59,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm min-w-[760px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
@@ -175,6 +175,110 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="sm:hidden divide-y divide-gray-100">
+        {rows.map(c => {
+          const isSelf = c.id === currentUserId
+          const suspended = !!c.is_suspended
+          const isConfirming = deleteConfirm === c.id
+          const isBusy = !!busy[c.id]
+
+          return (
+            <div key={c.id} className={`p-4 space-y-3 ${suspended ? 'bg-red-50/40' : ''}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 leading-snug truncate">{c.business_name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{c.owner_name}</p>
+                  {c.is_admin && (
+                    <span className="inline-block text-[10px] font-bold text-[#0E6E7E] uppercase tracking-wide mt-0.5">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                {suspended ? (
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                    Suspended
+                  </span>
+                ) : (
+                  <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                    Active
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                <div className="col-span-2 min-w-0">
+                  <span className="text-gray-400">Email </span>
+                  <span className="text-gray-600 break-all">{c.email}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Joined </span>
+                  <span className="text-gray-500">
+                    {new Date(c.created_at).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric',
+                    })}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Quotes </span>
+                  <span className="font-semibold text-gray-900">{c.quoteCount}</span>
+                </div>
+              </div>
+
+              {isConfirming ? (
+                <div className="flex items-center gap-2 pt-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  <span className="text-xs text-red-600 font-medium flex-1">Delete all data?</span>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    disabled={isBusy}
+                    className="text-xs px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {isBusy ? 'Deleting…' : 'Yes, delete'}
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="text-xs px-2.5 py-1 border border-gray-300 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 pt-1">
+                  {/* Suspend / Reactivate — disabled for self */}
+                  <button
+                    onClick={() => !isSelf && toggleSuspend(c.id, suspended)}
+                    disabled={isBusy || isSelf}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                      suspended
+                        ? 'text-green-600 border-green-200 hover:bg-green-50'
+                        : 'text-amber-600 border-amber-200 hover:bg-amber-50'
+                    }`}
+                  >
+                    {suspended
+                      ? <UserCheck className="w-3.5 h-3.5" />
+                      : <UserX className="w-3.5 h-3.5" />
+                    }
+                    {isSelf ? 'Cannot suspend self' : suspended ? 'Reactivate' : 'Suspend'}
+                  </button>
+
+                  {/* Delete — disabled for self */}
+                  <button
+                    onClick={() => !isSelf && setDeleteConfirm(c.id)}
+                    disabled={isBusy || isSelf}
+                    title={isSelf ? 'Cannot delete yourself' : 'Delete contractor and all data'}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-500 border border-red-200 hover:bg-red-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
