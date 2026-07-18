@@ -54,16 +54,32 @@ export async function POST(req: NextRequest) {
       const stripeSubscriptionId =
         typeof session.subscription === 'string' ? session.subscription : ''
 
-      const { error: upgradeErr } = await admin
+      // A successful payment always restores access, regardless of any prior suspension.
+      const { data: updatedContractor, error: upgradeErr } = await admin
         .from('contractors')
         .update({
           subscription_status: 'active',
           stripe_subscription_id: stripeSubscriptionId,
+          is_suspended: false,
         })
         .eq('id', upgradeContractorId)
+        .select('business_name, email')
+        .single()
 
       if (upgradeErr) {
         console.error('[webhook] upgrade update failed', upgradeErr)
+      } else {
+        // Admin-facing notification only — separate from anything the contractor sees.
+        try {
+          await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+            to: 'Lineagelabsllc@gmail.com',
+            subject: `QuoteBuilder upgrade — ${updatedContractor.business_name}`,
+            html: `<p>${updatedContractor.business_name} (${updatedContractor.email}) just upgraded to a paid QuoteBuilder subscription — their account is now active.</p>`,
+          })
+        } catch (notifyErr) {
+          console.error('[webhook] admin upgrade notification failed', notifyErr)
+        }
       }
 
       return NextResponse.json({ received: true })

@@ -12,6 +12,7 @@ interface ContractorRow {
   created_at: string
   is_suspended: boolean | null
   is_admin: boolean | null
+  subscription_status: string | null
   quoteCount: number
 }
 
@@ -134,6 +135,9 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                         Active
                       </span>
                     )}
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                      {c.subscription_status || '—'}
+                    </p>
                   </td>
 
                   {/* Actions */}
@@ -230,15 +234,20 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                     </span>
                   )}
                 </div>
-                {suspended ? (
-                  <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                    Suspended
-                  </span>
-                ) : (
-                  <span className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                    Active
-                  </span>
-                )}
+                <div className="shrink-0 text-right">
+                  {suspended ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                      Suspended
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                      Active
+                    </span>
+                  )}
+                  <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wide">
+                    {c.subscription_status || '—'}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">

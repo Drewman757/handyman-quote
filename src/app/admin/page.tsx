@@ -37,7 +37,7 @@ export default async function AdminPage() {
   // Fetch all contractors
   const { data: contractors } = await admin
     .from('contractors')
-    .select('id, business_name, owner_name, email, created_at, is_suspended, is_admin')
+    .select('id, business_name, owner_name, email, created_at, is_suspended, is_admin, subscription_status')
     .order('created_at', { ascending: false })
 
   // Aggregate quote counts in one query
