@@ -40,20 +40,32 @@ export default async function AdminPage() {
     .select('id, business_name, owner_name, email, created_at, is_suspended, is_admin, subscription_status')
     .order('created_at', { ascending: false })
 
-  // Aggregate quote counts in one query
-  const { data: quoteCounts } = await admin
+  // Fetch quotes with just enough for the admin table's expandable per-contractor list —
+  // also doubles as the count aggregate, no separate query needed for that.
+  const { data: quotes } = await admin
     .from('quotes')
-    .select('contractor_id')
+    .select('id, contractor_id, status, total, created_at, client:clients(name)')
+    .order('created_at', { ascending: false })
 
-  const countMap = (quoteCounts ?? []).reduce<Record<string, number>>((acc, q) => {
-    acc[q.contractor_id] = (acc[q.contractor_id] ?? 0) + 1
+  const quotesByContractor = (quotes ?? []).reduce<Record<string, typeof quotes>>((acc, q) => {
+    (acc[q.contractor_id] ??= []).push(q)
     return acc
   }, {})
 
-  const rows = (contractors ?? []).map(c => ({
-    ...c,
-    quoteCount: countMap[c.id] ?? 0,
-  }))
+  const rows = (contractors ?? []).map(c => {
+    const contractorQuotes = (quotesByContractor[c.id] ?? []).map(q => ({
+      id: q.id as string,
+      status: q.status as string,
+      total: q.total as number,
+      created_at: q.created_at as string,
+      client_name: (q.client as unknown as { name: string } | null)?.name ?? 'Unknown client',
+    }))
+    return {
+      ...c,
+      quoteCount: contractorQuotes.length,
+      quotes: contractorQuotes,
+    }
+  })
 
   const activeCount = rows.filter(r => !r.is_suspended).length
   const suspendedCount = rows.filter(r => r.is_suspended).length

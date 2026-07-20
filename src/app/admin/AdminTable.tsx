@@ -1,8 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, UserX, UserCheck, AlertTriangle, Mail, Check } from 'lucide-react'
+import { Trash2, UserX, UserCheck, AlertTriangle, Mail, Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils/pricing'
+
+interface QuoteSummary {
+  id: string
+  status: string
+  total: number
+  created_at: string
+  client_name: string
+}
 
 interface ContractorRow {
   id: string
@@ -14,6 +23,7 @@ interface ContractorRow {
   is_admin: boolean | null
   subscription_status: string | null
   quoteCount: number
+  quotes: QuoteSummary[]
 }
 
 export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; currentUserId: string }) {
@@ -22,6 +32,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [emailBusy, setEmailBusy] = useState<Record<string, boolean>>({})
   const [emailSent, setEmailSent] = useState<Record<string, boolean>>({})
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   async function handleSendUpgradeEmail(contractorId: string) {
     setEmailBusy(b => ({ ...b, [contractorId]: true }))
@@ -99,7 +110,8 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
               const isBusy = !!busy[c.id]
 
               return (
-                <tr key={c.id} className={suspended ? 'bg-red-50/40' : 'hover:bg-gray-50/50'}>
+                <Fragment key={c.id}>
+                <tr className={suspended ? 'bg-red-50/40' : 'hover:bg-gray-50/50'}>
                   {/* Name */}
                   <td className="px-5 py-4">
                     <p className="font-medium text-gray-900 leading-snug">{c.business_name}</p>
@@ -122,7 +134,15 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                   </td>
 
                   {/* Quote count */}
-                  <td className="px-5 py-4 text-right font-semibold text-gray-900">{c.quoteCount}</td>
+                  <td className="px-5 py-4 text-right">
+                    <button
+                      onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                      className="inline-flex items-center gap-1 font-semibold text-gray-900 hover:text-[#0E6E7E] transition"
+                    >
+                      {c.quoteCount}
+                      {expanded === c.id ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                  </td>
 
                   {/* Status badge */}
                   <td className="px-5 py-4 text-center">
@@ -208,6 +228,35 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                     </div>
                   </td>
                 </tr>
+                {expanded === c.id && (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-4 bg-gray-50 border-t border-b border-gray-100">
+                      {c.quotes.length === 0 ? (
+                        <p className="text-xs text-gray-400">No quotes yet.</p>
+                      ) : (
+                        <div className="grid grid-cols-[1fr,auto,auto,auto] gap-x-6 gap-y-1.5 text-xs">
+                          <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Client</div>
+                          <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Date</div>
+                          <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Status</div>
+                          <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide text-right">Total</div>
+                          {c.quotes.map(q => (
+                            <Fragment key={q.id}>
+                              <div className="text-gray-700 truncate max-w-[220px]">{q.client_name}</div>
+                              <div className="text-gray-500 whitespace-nowrap">
+                                {new Date(q.created_at).toLocaleDateString('en-US', {
+                                  month: 'short', day: 'numeric', year: 'numeric',
+                                })}
+                              </div>
+                              <div className="text-gray-600 capitalize">{q.status}</div>
+                              <div className="text-gray-900 font-semibold text-right">{formatCurrency(q.total)}</div>
+                            </Fragment>
+                          ))}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               )
             })}
           </tbody>
@@ -265,9 +314,37 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                 </div>
                 <div>
                   <span className="text-gray-400">Quotes </span>
-                  <span className="font-semibold text-gray-900">{c.quoteCount}</span>
+                  <button
+                    onClick={() => setExpanded(expanded === c.id ? null : c.id)}
+                    className="inline-flex items-center gap-1 font-semibold text-gray-900"
+                  >
+                    {c.quoteCount}
+                    {expanded === c.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
                 </div>
               </div>
+
+              {expanded === c.id && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+                  {c.quotes.length === 0 ? (
+                    <p className="text-xs text-gray-400">No quotes yet.</p>
+                  ) : (
+                    c.quotes.map(q => (
+                      <div key={q.id} className="flex items-center justify-between text-xs border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                        <div className="min-w-0">
+                          <p className="text-gray-700 font-medium truncate">{q.client_name}</p>
+                          <p className="text-gray-400">
+                            {new Date(q.created_at).toLocaleDateString('en-US', {
+                              month: 'short', day: 'numeric', year: 'numeric',
+                            })} &middot; <span className="capitalize">{q.status}</span>
+                          </p>
+                        </div>
+                        <span className="font-semibold text-gray-900 shrink-0 ml-2">{formatCurrency(q.total)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
 
               {isConfirming ? (
                 <div className="flex items-center gap-2 pt-1">
