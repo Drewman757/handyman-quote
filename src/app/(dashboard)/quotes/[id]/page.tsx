@@ -5,6 +5,7 @@ import { formatCurrency, getUnitLabel } from '@/lib/utils/pricing'
 import { ArrowLeft } from 'lucide-react'
 import { QuoteActions } from './QuoteActions'
 import { FollowUp } from './FollowUp'
+import { LifecycleStepper } from './LifecycleStepper'
 
 const statusColors: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-600',
@@ -55,6 +56,19 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
           isInvoiceSent={!!quote.invoice_sent_at}
         />
       </div>
+
+      <LifecycleStepper
+        status={quote.status}
+        stages={[
+          { label: 'Draft', done: true },
+          { label: 'Sent', done: !!quote.sent_at },
+          { label: 'Follow-up', done: !!quote.follow_up_sent_at },
+          { label: 'Accepted', done: quote.status === 'accepted' },
+          { label: 'Project Started', done: !!quote.project_started_at },
+          { label: 'Invoice Sent', done: !!quote.invoice_sent_at },
+          { label: 'Paid', done: !!quote.is_paid },
+        ]}
+      />
 
       {/* Contractor branding — shown only when a logo is uploaded */}
       {contractor?.logo_url && (
