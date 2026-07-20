@@ -122,7 +122,10 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
             <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
             <Tooltip formatter={tooltipFormatter} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="main" stackId="a" radius={[4, 4, 0, 0]} name="Quotes">
+            {/* Renders the single-color Declined/Pending bars (0 for Accepted, which uses
+                the paid/notPaid bars below instead) — excluded from the legend since its
+                per-category Cell colors have no single swatch to show there. */}
+            <Bar dataKey="main" stackId="a" radius={[4, 4, 0, 0]} name="Quotes" legendType="none">
               {winLossData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
