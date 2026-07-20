@@ -38,8 +38,15 @@ export default async function AdminPage() {
   // Fetch all contractors
   const { data: contractors } = await admin
     .from('contractors')
-    .select('id, business_name, owner_name, email, created_at, is_suspended, is_admin, subscription_status')
+    .select('id, user_id, business_name, owner_name, email, created_at, is_suspended, is_admin, subscription_status')
     .order('created_at', { ascending: false })
+
+  // Supabase Auth only tracks the most recent sign-in, not a running count — same
+  // listUsers() lookup pattern already used in api/admin/delete for email cross-checks.
+  const { data: authUsersPage } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  const lastSignInByUserId = new Map(
+    (authUsersPage?.users ?? []).map(u => [u.id, u.last_sign_in_at ?? null])
+  )
 
   // Fetch quotes with just enough for the admin table's expandable per-contractor list —
   // also doubles as the count aggregate and the stats section below, no separate queries needed.
@@ -64,6 +71,7 @@ export default async function AdminPage() {
     }))
     return {
       ...c,
+      lastSignInAt: lastSignInByUserId.get(c.user_id) ?? null,
       quoteCount: contractorQuotes.length,
       quotes: contractorQuotes,
     }

@@ -23,8 +23,16 @@ interface ContractorRow {
   is_suspended: boolean | null
   is_admin: boolean | null
   subscription_status: string | null
+  lastSignInAt: string | null
   quoteCount: number
   quotes: QuoteSummary[]
+}
+
+function formatLastLogin(lastSignInAt: string | null): string {
+  if (!lastSignInAt) return 'Never'
+  return new Date(lastSignInAt).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  })
 }
 
 export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; currentUserId: string }) {
@@ -98,6 +106,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contractor</th>
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
               <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+              <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Last Login</th>
               <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Quotes</th>
               <th className="text-center px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
               <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -132,6 +141,11 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                     {new Date(c.created_at).toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric', year: 'numeric',
                     })}
+                  </td>
+
+                  {/* Last login */}
+                  <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
+                    {formatLastLogin(c.lastSignInAt)}
                   </td>
 
                   {/* Quote count */}
@@ -231,7 +245,7 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                 </tr>
                 {expanded === c.id && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-4 bg-gray-50 border-t border-b border-gray-100">
+                    <td colSpan={7} className="px-5 py-4 bg-gray-50 border-t border-b border-gray-100">
                       {c.quotes.length === 0 ? (
                         <p className="text-xs text-gray-400">No quotes yet.</p>
                       ) : (
@@ -320,6 +334,10 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                       month: 'short', day: 'numeric', year: 'numeric',
                     })}
                   </span>
+                </div>
+                <div>
+                  <span className="text-gray-400">Last login </span>
+                  <span className="text-gray-500">{formatLastLogin(c.lastSignInAt)}</span>
                 </div>
                 <div>
                   <span className="text-gray-400">Quotes </span>
