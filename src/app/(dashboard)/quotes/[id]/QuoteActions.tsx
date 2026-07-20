@@ -21,19 +21,36 @@ export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
     setLoading(newStatus)
     await supabase.from('quotes').update({
       status: newStatus,
-      responded_at: new Date().toISOString(),
+      // Only a real decision (accepted/declined) counts as a "response" — reverting
+      // back to sent means there's no longer a recorded decision.
+      responded_at: (newStatus === 'accepted' || newStatus === 'declined') ? new Date().toISOString() : null,
     }).eq('id', quoteId)
     router.refresh()
     setLoading('')
+  }
+
+  // Won/Lost are toggles, same pattern as Mark as Paid — clicking an already-active
+  // one reverts back to "sent" (awaiting response) rather than being a one-way action.
+  function toggleWon() {
+    return markStatus(status === 'accepted' ? 'sent' : 'accepted')
+  }
+  function toggleLost() {
+    return markStatus(status === 'declined' ? 'sent' : 'declined')
   }
 
   // Independent of send status by design — a contractor can get paid in cash before,
   // during, or after the quote is ever emailed, so this isn't gated on `status`.
   async function togglePaid() {
     setLoading('paid')
+    const nowPaid = !isPaid
     await supabase.from('quotes').update({
-      is_paid: !isPaid,
-      paid_at: !isPaid ? new Date().toISOString() : null,
+      is_paid: nowPaid,
+      paid_at: nowPaid ? new Date().toISOString() : null,
+      // Paid implies Won — a contractor wouldn't mark something paid that wasn't
+      // accepted. One-directional only: unmarking paid never reverts status back.
+      ...(nowPaid && status !== 'accepted'
+        ? { status: 'accepted', responded_at: new Date().toISOString() }
+        : {}),
     }).eq('id', quoteId)
     router.refresh()
     setLoading('')
@@ -110,15 +127,31 @@ export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
             {loading === 'email' ? 'Sending…' : 'Email quote'}
           </button>
         )}
-        {status === 'sent' || status === 'viewed' ? (
+        {status === 'sent' || status === 'viewed' || status === 'accepted' || status === 'declined' ? (
           <>
-            <button onClick={() => markStatus('accepted')} disabled={!!loading}
-              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50">
-              <CheckCircle className="w-3.5 h-3.5" />Won
+            <button
+              onClick={toggleWon}
+              disabled={!!loading}
+              className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50 ${
+                status === 'accepted'
+                  ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              {status === 'accepted' ? 'Won ✓' : 'Won'}
             </button>
-            <button onClick={() => markStatus('declined')} disabled={!!loading}
-              className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50">
-              <XCircle className="w-3.5 h-3.5" />Lost
+            <button
+              onClick={toggleLost}
+              disabled={!!loading}
+              className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50 ${
+                status === 'declined'
+                  ? 'bg-red-100 hover:bg-red-200 text-red-700'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              {status === 'declined' ? 'Lost ✓' : 'Lost'}
             </button>
           </>
         ) : null}

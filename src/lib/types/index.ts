@@ -100,6 +100,7 @@ export interface QuoteAnalytics {
   total_quotes: number
   sent_quotes: number
   accepted_quotes: number
+  paid_quotes: number          // subset of accepted_quotes where is_paid
   declined_quotes: number
   pending_quotes: number
   win_rate: number

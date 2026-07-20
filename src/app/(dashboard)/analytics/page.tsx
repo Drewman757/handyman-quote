@@ -22,6 +22,7 @@ export default async function AnalyticsPage() {
     total_quotes: analyticsRow?.total_quotes || 0,
     sent_quotes: (analyticsRow?.pending_quotes || 0) + (analyticsRow?.accepted_quotes || 0) + (analyticsRow?.declined_quotes || 0),
     accepted_quotes: analyticsRow?.accepted_quotes || 0,
+    paid_quotes: analyticsRow?.paid_quotes || 0,
     declined_quotes: analyticsRow?.declined_quotes || 0,
     pending_quotes: analyticsRow?.pending_quotes || 0,
     win_rate: parseFloat(analyticsRow?.win_rate_pct || '0'),

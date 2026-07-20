@@ -4,7 +4,7 @@ import { formatCurrency, getPricingFlag } from '@/lib/utils/pricing'
 import type { QuoteAnalytics, LineItemAnalytics } from '@/lib/types'
 import { TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
 } from 'recharts'
 
@@ -55,15 +55,24 @@ const FLAG_LABELS = {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function tooltipFormatter(val: any): [string, string] {
-  return [`${val} quotes`, '']
+function tooltipFormatter(val: any, name: any): [string, string] {
+  return [`${val} quotes`, name]
 }
 
 export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDashboardProps) {
+  // Accepted is split into Paid / Not yet paid (stacked); Declined and Pending stay as
+  // single bars — `main` carries their value, 0 for Accepted where `paid`/`notPaid` apply
+  // instead. All three share stackId="a" so only the relevant segment(s) render per bar.
   const winLossData = [
-    { name: 'Accepted', value: analytics.accepted_quotes, color: '#22c55e' },
-    { name: 'Declined', value: analytics.declined_quotes, color: '#ef4444' },
-    { name: 'Pending', value: analytics.pending_quotes, color: '#f59e0b' },
+    {
+      name: 'Accepted',
+      main: 0,
+      paid: analytics.paid_quotes,
+      notPaid: Math.max(0, analytics.accepted_quotes - analytics.paid_quotes),
+      color: '#22c55e',
+    },
+    { name: 'Declined', main: analytics.declined_quotes, paid: 0, notPaid: 0, color: '#ef4444' },
+    { name: 'Pending', main: analytics.pending_quotes, paid: 0, notPaid: 0, color: '#f59e0b' },
   ]
 
   const flaggedItems = lineItemAnalytics
@@ -106,17 +115,20 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
 
       <div className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="mb-4 text-base font-semibold text-gray-900">Win / loss breakdown</h2>
-        <ResponsiveContainer width="100%" height={200}>
+        <ResponsiveContainer width="100%" height={220}>
           <BarChart data={winLossData} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6b7280' }} />
             <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
             <Tooltip formatter={tooltipFormatter} />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey="main" stackId="a" radius={[4, 4, 0, 0]} name="Quotes">
               {winLossData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
             </Bar>
+            <Bar dataKey="paid" stackId="a" fill="#16a34a" name="Paid" />
+            <Bar dataKey="notPaid" stackId="a" radius={[4, 4, 0, 0]} fill="#86efac" name="Not yet paid" />
           </BarChart>
         </ResponsiveContainer>
       </div>
