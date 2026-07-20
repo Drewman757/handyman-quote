@@ -39,11 +39,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">{quote.quote_number}</h1>
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColors[quote.status]}`}>{quote.status}</span>
+              {quote.is_paid && (
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 text-green-700">Paid</span>
+              )}
             </div>
             <p className="text-sm text-gray-500">{client?.name}</p>
           </div>
         </div>
-        <QuoteActions quoteId={quote.id} status={quote.status} clientEmail={client?.email} />
+        <QuoteActions quoteId={quote.id} status={quote.status} clientEmail={client?.email} isPaid={!!quote.is_paid} />
       </div>
 
       {/* Contractor branding — shown only when a logo is uploaded */}

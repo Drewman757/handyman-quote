@@ -10,6 +10,7 @@ interface QuoteSummary {
   status: string
   total: number
   created_at: string
+  is_paid: boolean
   client_name: string
 }
 
@@ -234,10 +235,11 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                       {c.quotes.length === 0 ? (
                         <p className="text-xs text-gray-400">No quotes yet.</p>
                       ) : (
-                        <div className="grid grid-cols-[1fr,auto,auto,auto] gap-x-6 gap-y-1.5 text-xs">
+                        <div className="grid grid-cols-[1fr,auto,auto,auto,auto] gap-x-6 gap-y-1.5 text-xs items-center">
                           <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Client</div>
                           <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Date</div>
                           <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Status</div>
+                          <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide">Paid</div>
                           <div className="text-gray-400 font-semibold uppercase text-[10px] tracking-wide text-right">Total</div>
                           {c.quotes.map(q => (
                             <Fragment key={q.id}>
@@ -248,6 +250,13 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                                 })}
                               </div>
                               <div className="text-gray-600 capitalize">{q.status}</div>
+                              <div>
+                                {q.is_paid ? (
+                                  <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">Paid</span>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </div>
                               <div className="text-gray-900 font-semibold text-right">{formatCurrency(q.total)}</div>
                             </Fragment>
                           ))}
@@ -337,6 +346,9 @@ export function AdminTable({ rows, currentUserId }: { rows: ContractorRow[]; cur
                             {new Date(q.created_at).toLocaleDateString('en-US', {
                               month: 'short', day: 'numeric', year: 'numeric',
                             })} &middot; <span className="capitalize">{q.status}</span>
+                            {q.is_paid && (
+                              <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700 align-middle">Paid</span>
+                            )}
                           </p>
                         </div>
                         <span className="font-semibold text-gray-900 shrink-0 ml-2">{formatCurrency(q.total)}</span>

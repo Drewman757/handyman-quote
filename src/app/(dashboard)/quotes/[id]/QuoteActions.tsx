@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Send, FileDown, Pencil, Copy } from 'lucide-react'
+import { CheckCircle, XCircle, Send, FileDown, Pencil, Copy, DollarSign } from 'lucide-react'
 
-export function QuoteActions({ quoteId, status, clientEmail }: {
+export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
   quoteId: string
   status: string
   clientEmail: string
+  isPaid: boolean
 }) {
   const [loading, setLoading] = useState('')
   const [confirmEmail, setConfirmEmail] = useState(false)
@@ -21,6 +22,18 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
     await supabase.from('quotes').update({
       status: newStatus,
       responded_at: new Date().toISOString(),
+    }).eq('id', quoteId)
+    router.refresh()
+    setLoading('')
+  }
+
+  // Independent of send status by design — a contractor can get paid in cash before,
+  // during, or after the quote is ever emailed, so this isn't gated on `status`.
+  async function togglePaid() {
+    setLoading('paid')
+    await supabase.from('quotes').update({
+      is_paid: !isPaid,
+      paid_at: !isPaid ? new Date().toISOString() : null,
     }).eq('id', quoteId)
     router.refresh()
     setLoading('')
@@ -76,6 +89,18 @@ export function QuoteActions({ quoteId, status, clientEmail }: {
           <FileDown className="w-3.5 h-3.5" />
           PDF
         </a>
+        <button
+          onClick={togglePaid}
+          disabled={loading === 'paid'}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50 ${
+            isPaid
+              ? 'bg-green-100 hover:bg-green-200 text-green-700'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <DollarSign className="w-3.5 h-3.5" />
+          {loading === 'paid' ? 'Updating…' : isPaid ? 'Paid ✓' : 'Mark as Paid'}
+        </button>
         {(status === 'draft' || status === 'sent') && clientEmail && (
           <button
             onClick={() => { setConfirmEmail(true); setPricingChecked(false) }}

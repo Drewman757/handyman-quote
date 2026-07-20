@@ -84,6 +84,18 @@ const s = StyleSheet.create({
   footerText: { fontSize: 8, color: '#888' },
   footerBrand: { flexDirection: 'row', alignItems: 'center' },
   lineageLogo: { height: 11, width: 32, objectFit: 'contain', marginRight: 4 },
+  paidStamp: {
+    position: 'absolute',
+    top: 330,
+    left: 156,
+    fontSize: 72,
+    fontFamily: 'Open Sans',
+    fontWeight: 700,
+    color: '#16a34a',
+    opacity: 0.18,
+    letterSpacing: 6,
+    transform: 'rotate(-28deg)',
+  },
 })
 
 function sanitizeText(text: string): string {
@@ -97,6 +109,7 @@ type LI = { id: string; description: string; pricing_type: string; unit_price: n
 type QuoteDoc = {
   quote_number: string; created_at: string
   subtotal: number; tax_rate: number; tax_amount: number; total: number
+  is_paid: boolean
   payment_terms: string | null; caveats: string | null; financing_options: string | null
   client: { name: string; address: string; city: string; state: string; zip: string; phone: string; email: string }
   lump_sum: boolean
@@ -111,6 +124,8 @@ function QuotePDF({ q, contractorLogoSrc }: { q: QuoteDoc; contractorLogoSrc: st
   return (
     <Document title={`Quote ${q.quote_number}`} author={q.contractor.business_name}>
       <Page size="LETTER" style={s.page}>
+
+        {q.is_paid ? <Text style={s.paidStamp}>PAID</Text> : null}
 
         {/* ── Header ── */}
         <View style={s.headerOuter}>

@@ -45,7 +45,7 @@ export default async function AdminPage() {
   // also doubles as the count aggregate and the stats section below, no separate queries needed.
   const { data: quotes } = await admin
     .from('quotes')
-    .select('id, contractor_id, status, total, created_at, sent_at, client:clients(name)')
+    .select('id, contractor_id, status, total, created_at, sent_at, is_paid, client:clients(name)')
     .order('created_at', { ascending: false })
 
   const quotesByContractor = (quotes ?? []).reduce<Record<string, typeof quotes>>((acc, q) => {
@@ -59,6 +59,7 @@ export default async function AdminPage() {
       status: q.status as string,
       total: q.total as number,
       created_at: q.created_at as string,
+      is_paid: !!q.is_paid,
       client_name: (q.client as unknown as { name: string } | null)?.name ?? 'Unknown client',
     }))
     return {

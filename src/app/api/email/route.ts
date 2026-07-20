@@ -205,7 +205,10 @@ export async function POST(req: NextRequest) {
           <td style="padding:4px 0;font-size:14px;color:#555;text-align:right;">${formatCurrency(quote.tax_amount)}</td>
         </tr>` : ''}
         <tr>
-          <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;">Total</td>
+          <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;">
+            Total
+            ${quote.is_paid ? `<span style="margin-left:8px;display:inline-block;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#15803d;background:#dcfce7;border-radius:9999px;vertical-align:middle;">Paid</span>` : ''}
+          </td>
           <td style="padding:12px 0 4px;font-size:18px;font-weight:700;color:#111827;text-align:right;">${formatCurrency(quote.total)}</td>
         </tr>
       </table>
