@@ -244,6 +244,22 @@ export async function POST(req: NextRequest) {
       ],
     })
 
+    // Admin-facing notification only — separate from the client email above, and must
+    // never block the actual quote send if it fails.
+    try {
+      const sentAt = new Date().toLocaleString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+      })
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
+        to: 'Lineagelabsllc@gmail.com',
+        subject: `Quote sent — ${contractor.business_name}`,
+        html: `<p>${contractor.business_name} sent a quote to ${client.name} for ${formatCurrency(quote.total)} on ${sentAt}.</p>`,
+      })
+    } catch (notifyErr) {
+      console.error('[email] admin quote-sent notification failed', notifyErr)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Email error:', error)
