@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Shield } from 'lucide-react'
 import { AdminTable } from './AdminTable'
+import { AdminStats } from './AdminStats'
 import { CreateContractorForm } from './CreateContractorForm'
 import { SignOutButton } from '@/components/SignOutButton'
 
@@ -41,10 +42,10 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
 
   // Fetch quotes with just enough for the admin table's expandable per-contractor list —
-  // also doubles as the count aggregate, no separate query needed for that.
+  // also doubles as the count aggregate and the stats section below, no separate queries needed.
   const { data: quotes } = await admin
     .from('quotes')
-    .select('id, contractor_id, status, total, created_at, client:clients(name)')
+    .select('id, contractor_id, status, total, created_at, sent_at, client:clients(name)')
     .order('created_at', { ascending: false })
 
   const quotesByContractor = (quotes ?? []).reduce<Record<string, typeof quotes>>((acc, q) => {
@@ -69,6 +70,14 @@ export default async function AdminPage() {
 
   const activeCount = rows.filter(r => !r.is_suspended).length
   const suspendedCount = rows.filter(r => r.is_suspended).length
+
+  // "Sent" means actually sent to a client, not a draft — same distinction used by the
+  // Phase 1 quote-sent notification (sent_at is only set when the send action fires).
+  const sentQuotes = (quotes ?? []).filter(q => q.sent_at)
+  const totalQuotesSent = sentQuotes.length
+  const totalQuoteValue = sentQuotes.reduce((sum, q) => sum + (q.total ?? 0), 0)
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const quotesLast7Days = sentQuotes.filter(q => new Date(q.sent_at as string) >= sevenDaysAgo).length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -109,6 +118,12 @@ export default async function AdminPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-4">
+        <AdminStats
+          totalQuotesSent={totalQuotesSent}
+          totalQuoteValue={totalQuoteValue}
+          activeContractors={activeCount}
+          quotesLast7Days={quotesLast7Days}
+        />
         <CreateContractorForm />
         <AdminTable rows={rows} currentUserId={caller.id} />
       </main>
