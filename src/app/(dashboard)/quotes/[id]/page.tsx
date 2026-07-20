@@ -46,7 +46,14 @@ export default async function QuoteDetailPage({ params }: { params: Promise<{ id
             <p className="text-sm text-gray-500">{client?.name}</p>
           </div>
         </div>
-        <QuoteActions quoteId={quote.id} status={quote.status} clientEmail={client?.email} isPaid={!!quote.is_paid} />
+        <QuoteActions
+          quoteId={quote.id}
+          status={quote.status}
+          clientEmail={client?.email}
+          isPaid={!!quote.is_paid}
+          isProjectStarted={!!quote.project_started_at}
+          isInvoiceSent={!!quote.invoice_sent_at}
+        />
       </div>
 
       {/* Contractor branding — shown only when a logo is uploaded */}

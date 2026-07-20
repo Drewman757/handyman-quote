@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { CheckCircle, XCircle, Send, FileDown, Pencil, Copy, DollarSign } from 'lucide-react'
+import { CheckCircle, XCircle, Send, FileDown, Pencil, Copy, DollarSign, Hammer, Receipt } from 'lucide-react'
 
-export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
+export function QuoteActions({ quoteId, status, clientEmail, isPaid, isProjectStarted, isInvoiceSent }: {
   quoteId: string
   status: string
   clientEmail: string
   isPaid: boolean
+  isProjectStarted: boolean
+  isInvoiceSent: boolean
 }) {
   const [loading, setLoading] = useState('')
   const [confirmEmail, setConfirmEmail] = useState(false)
@@ -51,6 +53,26 @@ export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
       ...(nowPaid && status !== 'accepted'
         ? { status: 'accepted', responded_at: new Date().toISOString() }
         : {}),
+    }).eq('id', quoteId)
+    router.refresh()
+    setLoading('')
+  }
+
+  // Manual markers only, same as Mark as Paid — no emails/actions triggered, just a
+  // reversible timestamp toggle.
+  async function toggleProjectStarted() {
+    setLoading('project')
+    await supabase.from('quotes').update({
+      project_started_at: isProjectStarted ? null : new Date().toISOString(),
+    }).eq('id', quoteId)
+    router.refresh()
+    setLoading('')
+  }
+
+  async function toggleInvoiceSent() {
+    setLoading('invoice')
+    await supabase.from('quotes').update({
+      invoice_sent_at: isInvoiceSent ? null : new Date().toISOString(),
     }).eq('id', quoteId)
     router.refresh()
     setLoading('')
@@ -117,6 +139,30 @@ export function QuoteActions({ quoteId, status, clientEmail, isPaid }: {
         >
           <DollarSign className="w-3.5 h-3.5" />
           {loading === 'paid' ? 'Updating…' : isPaid ? 'Paid ✓' : 'Mark as Paid'}
+        </button>
+        <button
+          onClick={toggleProjectStarted}
+          disabled={loading === 'project'}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50 ${
+            isProjectStarted
+              ? 'bg-green-100 hover:bg-green-200 text-green-700'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Hammer className="w-3.5 h-3.5" />
+          {loading === 'project' ? 'Updating…' : isProjectStarted ? 'Project Started ✓' : 'Project Started'}
+        </button>
+        <button
+          onClick={toggleInvoiceSent}
+          disabled={loading === 'invoice'}
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition disabled:opacity-50 ${
+            isInvoiceSent
+              ? 'bg-green-100 hover:bg-green-200 text-green-700'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
+        >
+          <Receipt className="w-3.5 h-3.5" />
+          {loading === 'invoice' ? 'Updating…' : isInvoiceSent ? 'Invoice Sent ✓' : 'Invoice Sent'}
         </button>
         {(status === 'draft' || status === 'sent') && clientEmail && (
           <button
