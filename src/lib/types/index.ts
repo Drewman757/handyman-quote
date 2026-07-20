@@ -109,6 +109,11 @@ export interface QuoteAnalytics {
   total_pipeline: number      // sum of sent/viewed quotes
 }
 
+export interface QuoteFunnelStage {
+  stage: string
+  count: number
+}
+
 export interface LineItemAnalytics {
   description: string
   times_quoted: number

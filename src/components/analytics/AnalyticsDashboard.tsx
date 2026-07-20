@@ -1,7 +1,7 @@
 'use client'
 
 import { formatCurrency, getPricingFlag } from '@/lib/utils/pricing'
-import type { QuoteAnalytics, LineItemAnalytics } from '@/lib/types'
+import type { QuoteAnalytics, LineItemAnalytics, QuoteFunnelStage } from '@/lib/types'
 import { TrendingUp, TrendingDown, DollarSign, FileText, AlertTriangle } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -11,6 +11,7 @@ import {
 interface AnalyticsDashboardProps {
   analytics: QuoteAnalytics
   lineItemAnalytics: LineItemAnalytics[]
+  funnelData: QuoteFunnelStage[]
 }
 
 function StatCard({
@@ -59,7 +60,7 @@ function tooltipFormatter(val: any, name: any): [string, string] {
   return [`${val} quotes`, name]
 }
 
-export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ analytics, lineItemAnalytics, funnelData }: AnalyticsDashboardProps) {
   // Accepted is split into Paid / Not yet paid (stacked); Declined and Pending stay as
   // single bars — `main` carries their value, 0 for Accepted where `paid`/`notPaid` apply
   // instead. All three share stackId="a" so only the relevant segment(s) render per bar.
@@ -132,6 +133,34 @@ export function AnalyticsDashboard({ analytics, lineItemAnalytics }: AnalyticsDa
             </Bar>
             <Bar dataKey="paid" stackId="a" fill="#16a34a" name="Paid" />
             <Bar dataKey="notPaid" stackId="a" radius={[4, 4, 0, 0]} fill="#86efac" name="Not yet paid" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-base font-semibold text-gray-900">Quote lifecycle funnel</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          Each quote counted once, at the furthest stage it&rsquo;s reached. Declined is a separate
+          end-state, not part of the linear flow.
+        </p>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={funnelData} margin={{ top: 4, right: 16, bottom: 48, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+            <XAxis
+              dataKey="stage"
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              interval={0}
+              angle={-35}
+              textAnchor="end"
+              height={70}
+            />
+            <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
+            <Tooltip formatter={tooltipFormatter} />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Quotes">
+              {funnelData.map((entry, i) => (
+                <Cell key={i} fill={entry.stage === 'Declined' ? '#ef4444' : '#0E6E7E'} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
