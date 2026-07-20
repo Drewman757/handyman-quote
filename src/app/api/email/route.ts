@@ -250,11 +250,18 @@ export async function POST(req: NextRequest) {
       const sentAt = new Date().toLocaleString('en-US', {
         month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
       })
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://handyman-quote.vercel.app'
+      const quoteUrl = `${siteUrl}/quotes/${quote.id}`
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || 'quotes@resend.dev',
         to: 'Lineagelabsllc@gmail.com',
         subject: `Quote sent — ${contractor.business_name}`,
-        html: `<p>${contractor.business_name} sent a quote to ${client.name} for ${formatCurrency(quote.total)} on ${sentAt}.</p>`,
+        // /quotes/[id] is RLS-scoped to the signed-in contractor's own quotes, so this
+        // link only resolves when logged in as that contractor — not viewable from the
+        // admin's own session. Noted inline rather than building admin-bypass access
+        // control for it.
+        html: `<p>${contractor.business_name} sent a quote to ${client.name} for ${formatCurrency(quote.total)} on ${sentAt}.<br>
+<a href="${quoteUrl}">View quote</a> (link only works when logged in as the contractor).</p>`,
       })
     } catch (notifyErr) {
       console.error('[email] admin quote-sent notification failed', notifyErr)
